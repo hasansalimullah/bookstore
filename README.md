@@ -1,0 +1,162 @@
+# Arabic Bookstore MVP — with private availability monitoring
+
+Your own storefront (own name, design, content, URLs). Each book has a **private** source URL that a
+server-side worker checks on a schedule. Customers only ever see your site and a status badge:
+
+| Source text | Stored | Customer sees |
+|---|---|---|
+| `متوفر` | `available` | 🟢 متوفر |
+| `غير متوفر` / `غير متوفر حاليًا` | `out_of_stock` | 🔴 غير متوفر |
+| anything else (timeout, HTTP error, block, selector missing, HTML changed, unknown text) | `unknown` | 🟡 حالة التوفر غير معروفة |
+
+A failure is **never** treated as "out of stock".
+
+## Architecture
+
+```
+Admin (you) ──► /admin (cookie-auth) ──► /api/admin/*  ──┐
+                                                          ▼
+Customers ──► / , /books/[slug] , /api/books ──►  PostgreSQL
+              (PublicBook type only)               ├─ books          (public-safe columns)
+                                                   ├─ book_sources   (PRIVATE: source_url_private, schedule)
+                                                   └─ check_logs     (PRIVATE: history + debug)
+                                                          ▲
+Worker (npm run worker, every 30 s)                       │
+  claim due books (FOR UPDATE SKIP LOCKED) ─► fetch (timeout, per-host delay, allowlist)
+  ─► parse `.product-availablity strong` ─► evaluate ─► write books + book_sources + check_logs
+```
+
+Design choices worth knowing:
+
+* **The source URL lives in its own table** (`book_sources`), not a column on `books`. Public queries select an explicit
+  column list from `books` only, and the `PublicBook` type has no field that could carry a URL — so a careless `SELECT *`
+  or `JSON.stringify(book)` on the public side cannot leak it. (This deliberately differs from the single-table schema you sketched.)
+* **The browser never checks anything.** Only the worker (or `/api/cron/check`) makes source requests.
+* **Stale protection:** if a book has had no *successful* check for `STALE_AFTER_MINUTES` (default 60), the public site shows 🟡 even if the last stored value was green.
+* **Due-queue scheduling** (`next_check_at` + jitter + exponential backoff on failures, honoring `Retry-After`) — no cron-per-book, works with several workers.
+* **We do not evade blocks.** HTTP 403/429/503 are recorded as errors and backed off; there is no CAPTCHA/anti-bot bypass.
+
+## Quick start (local, ~5 minutes)
+
+Requirements: Node 22.6+ (uses Node's built-in TypeScript stripping for scripts/tests), Docker (or any PostgreSQL 14+).
+
+```bash
+unzip bookstore-mvp.zip && cd bookstore-mvp
+cp .env.example .env          # then edit ADMIN_PASSWORD (8+ chars) and SESSION_SECRET (openssl rand -hex 32)
+docker compose up -d          # PostgreSQL on :5432   (skip if you have your own; set DATABASE_URL)
+npm install
+npm run migrate               # creates tables
+npm run seed                  # 5 test books using mock:// sources (no real requests)
+npm run dev                   # site + admin on http://localhost:3000
+npm run worker                # in a 2nd terminal: the scheduler
+npm test                      # unit tests (no DB or network needed)
+```
+
+* Public site: <http://localhost:3000>
+* Admin: <http://localhost:3000/admin> (password = `ADMIN_PASSWORD`)
+* Simulation page: <http://localhost:3000/admin/test>
+
+`.env` defaults to `SOURCE_MODE=mock`: nothing ever leaves your machine. The seed books use
+`mock://available`, `mock://out_of_stock`, `mock://unknown`, `mock://timeout`, and so on, so all
+three states + the error path show up immediately. In mock mode, a normal `https://ibnaljawzi.com/...`
+URL is *simulated as available* (no request made).
+
+## Testing plan with 5 books
+
+1. `npm test` — parser, decision logic, fetcher (mock), session/auth helpers, slugs.
+2. `npm run seed`, open `/admin`, click **Check Now** on each: expect 🟢, 🟢, 🔴, 🟡 (selector missing), 🟡 (timeout).
+3. Open `/admin/test` — run the five scenarios (AVAILABLE, OUT_OF_STOCK, UNKNOWN, timeout, network error) and paste real HTML from "View source" of a product page to see how the parser reads it.
+4. **Go live carefully.** Set `SOURCE_MODE=live`, delete the mock books (or edit their source URL), add 5 real books via **Add Book**
+   (you'll get the ✓ checklist), then press **Test Connection** on each and confirm `Detected text` really is the right book's status.
+   Add one book you know is out of stock and one you know is in stock.
+5. `npm run build && npm start`, then `npm run leak-check` (see below).
+
+### Verify nothing leaks
+
+`npm run leak-check` fetches the public pages, every JS/CSS chunk they load and the public API, and fails if it finds
+`ibnaljawzi`, `source_url`, `sourceUrl`, or `mock://`. It also confirms every `/api/admin/*` route answers 401/403 to anonymous
+visitors and `/admin` redirects to login. Run it against production too: `BASE_URL=https://yoursite.com npm run leak-check`.
+Also open "View source" on a book page yourself.
+
+## Admin features
+
+Add / edit / delete books · paste the private URL · **Import / Add Book** with immediate check + ✓ checklist · **Check Now** ·
+**Test Connection** (HTTP status, selector found, detected text, parsed status, timestamp — admin only, no DB write) ·
+current availability · last check time · last result · consecutive failures · next scheduled check · full check history with
+parse details · monitoring on/off per book · publish/unpublish.
+
+## Security checklist (how each requirement is met)
+
+1. Source URL only server-side → `book_sources` table; read only by worker and `/api/admin/*`.
+2. Never returned by public APIs → public routes use `PublicBook`; `leak-check` verifies.
+3. Customers can't reach admin endpoints → every `/api/admin/*` handler starts with `requireAdmin()`; `/admin/(protected)` layout redirects server-side (no admin HTML is sent to anonymous users).
+4. Customers can't modify data → no public write endpoints exist.
+5. Admin auth required → signed, HttpOnly, SameSite=Lax cookie (HMAC-SHA256, 8h); constant-time password check; login throttle; fails closed if `ADMIN_PASSWORD`/`SESSION_SECRET` are missing/short. Mutating admin requests also require a same-origin `Origin` header (CSRF).
+6/7. No source URL in JS or metadata → admin-only code paths; `config.ts` (which holds the allowed host) is imported by server modules only.
+8. No redirects/links to the source anywhere on the public side.
+9. Public errors are generic ("temporarily unavailable").
+10. Logs/debug info → `check_logs` only served by `/api/admin/.../logs`.
+* Extra: only `https://` URLs on `ALLOWED_SOURCE_HOSTS` can be saved or fetched (SSRF guard; redirects off-host are rejected); response size capped at 2 MB; `noindex` on admin.
+
+## Salla: what I found
+
+* Third-party directories (e.g. Store Leads) list `ibnaljawzi.com` as a **Salla** store, which fits the `product-availablity` markup you found. That's a directory listing, not an official statement — treat it as likely, not certain.
+* Salla has an official **Merchant API** (`https://api.salla.dev/admin/v2`) with a *Product Quantity* endpoint (`GET /products/quantities`, scope `products.read`). It requires an OAuth 2.0 bearer token that the **store owner** grants by installing/authorizing your app; the merchant can revoke it any time.
+* So: the official API is only usable if ibnaljawzi.com authorizes you (e.g. a supplier/partnership arrangement). **If they do, it's clearly preferable** to HTML parsing: structured data, exact quantities, no breakage when their theme changes, webhooks instead of polling, and no scraping-policy ambiguity. Without their authorization there is no official public way to read another store's inventory.
+* Plan: keep the HTML checker as the default; ask them for API access. The fetch → evaluate split (`source-fetcher.ts` / `evaluate.ts`) is where a Salla adapter would plug in (Salla API → private backend → DB → your site; tokens in env/DB, never sent to the browser). I have **not** built the Salla adapter since there are no credentials yet.
+* Regardless of approach: check their `robots.txt` and terms of use, keep the request rate low (defaults are conservative), and set `USER_AGENT` to something with a contact email. A short message asking for permission is the safest route.
+
+## Deploying
+
+**Option A — one small VPS (simplest, recommended):** Node 22 + managed or local PostgreSQL.
+```bash
+npm ci && npm run migrate && npm run build
+# two long-running processes (systemd or pm2):
+npm start                 # web (behind Caddy/nginx with HTTPS)
+npm run worker            # scheduler
+```
+Set `NODE_ENV=production`, real `DATABASE_URL`, strong `ADMIN_PASSWORD`/`SESSION_SECRET`, `SOURCE_MODE=live`, `USER_AGENT`.
+Cookies are `Secure` in production, so serve over HTTPS.
+
+**Option B — Vercel + hosted Postgres (Neon/Supabase):** serverless has no long-running worker, so set `CRON_SECRET`
+(16+ chars) and call `GET /api/cron/check` every 5 minutes with `Authorization: Bearer <CRON_SECRET>`
+(Vercel Cron does this automatically when `CRON_SECRET` is set; add a `crons` entry in `vercel.json`). The route
+processes one batch (`CHECK_BATCH_SIZE`) per call. Note the in-memory per-host delay and login throttle are per-instance on serverless.
+
+## Scaling from 5 → thousands of books
+
+Already in place: due-queue with an index on `next_check_at`, jittered schedule, failure backoff, `SKIP LOCKED` (run multiple workers safely), batch claiming with a lease, log retention (`LOG_RETENTION_DAYS`).
+
+**Do the arithmetic first.** The politeness delay is per host: with `CHECK_MIN_DELAY_MS=1500` one worker makes at most
+~40 requests/minute to the source. 400 books → 10-minute cycle is fine; **1,000 books needs ≥ ~25 minutes per cycle**, 5,000 books ≈ 2 hours. Options, in order of preference:
+
+1. **Salla API access** (bulk quantities in a few calls instead of one page per book) — by far the best at scale.
+2. **Tiered intervals:** check in-stock books less often than out-of-stock ones you're waiting on; check popular books more often (add a `priority`/`interval_minutes` column to `book_sources` and use it in `nextDelayMs`).
+3. **Conditional requests** (ETag / If-Modified-Since) if the source supports them.
+4. Only then raise concurrency / lower delay — ask the source first; being blocked costs more than a longer interval.
+
+Other steps as you grow: move the queue to Redis + BullMQ (your stated stack) if you need many workers; partition or aggregate `check_logs` (keep only status *changes* after 30 days); add a status-change notifier (e.g. email when a book flips available ⇄ out of stock); put a CDN in front of public pages (they already send `s-maxage=30` on the API).
+
+## Known limitations / things to verify
+
+* The parser is built from the HTML snippet you provided. Salla themes can render more than one `.product-availablity` (e.g. in "related products" cards). The **first** match is used and the count is shown in debug (`Containers matched`); if you see `> 1`, use **Test Connection** to confirm the detected text belongs to the main product. JSON-LD availability is shown as a cross-check but never used for the decision.
+* Only the exact phrases `متوفر`, `متوفر حاليا`, `غير متوفر…` are recognized (after harakat/alef normalization). Other wording (e.g. "قريبًا", "نفذت الكمية") deliberately yields 🟡 until you add it to `src/lib/parser.ts`.
+* Single admin password (no user accounts) — fine for an MVP.
+* No cart/checkout yet; this MVP is the catalog + availability system.
+* Built and unit-tested in a sandbox without npm/PostgreSQL access: the parser/decision/session/fetcher tests pass (35), but `next build`, the SQL, and the pages haven't been run against a live database yet. Expect to fix small type or SQL issues on first run and use `npm run leak-check` after building.
+
+## Project layout
+
+```
+migrations/001_init.sql        schema (books, book_sources, check_logs)
+scripts/                       migrate.ts, seed.ts, leak-check.ts
+src/lib/parser.ts              dependency-free `.product-availablity strong` parser
+src/lib/evaluate.ts            pure decision rules, backoff, stale protection
+src/lib/source-fetcher.ts      guarded fetch + mock mode
+src/lib/checker.ts             claim/run/persist checks
+src/lib/books.ts               public vs admin queries (separate types)
+src/worker/index.ts            the scheduler process
+src/app/api/…                  public API, admin API, cron endpoint
+src/app/(public pages), admin/ storefront + dashboard + test lab
+tests/                         node:test suites
+```
