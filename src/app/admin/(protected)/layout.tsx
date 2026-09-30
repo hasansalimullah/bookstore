@@ -24,6 +24,7 @@ export default async function ProtectedAdminLayout({ children }: { children: Rea
       <div className="mb-6 flex items-center justify-between rounded-lg bg-stone-800 px-4 py-2 text-sm text-white">
         <nav className="flex gap-4">
           <Link href="/admin">Books</Link>
+          <Link href="/admin/import">Import</Link>
           <Link href="/admin/orders">Orders</Link>
           <Link href="/admin/test">Test / Simulation</Link>
           <Link href="/" target="_blank">View site ↗</Link>

@@ -106,6 +106,17 @@ parse details · monitoring on/off per book · publish/unpublish.
 * Plan: keep the HTML checker as the default; ask them for API access. The fetch → evaluate split (`source-fetcher.ts` / `evaluate.ts`) is where a Salla adapter would plug in (Salla API → private backend → DB → your site; tokens in env/DB, never sent to the browser). I have **not** built the Salla adapter since there are no credentials yet.
 * Regardless of approach: check their `robots.txt` and terms of use, keep the request rate low (defaults are conservative), and set `USER_AGENT` to something with a contact email. A short message asking for permission is the safest route.
 
+## Bulk import from a Google Sheet / CSV
+
+Admin → **Import**. Row 1 headers: `Supplier product URL | Title | Author | Slug | Price | Image URL | Description`
+(only the first two are required; order doesn't matter). Paste the cells (copied from Google Sheets), upload a CSV, or give a
+Sheets link (the sheet must be shared "Anyone with the link → Viewer" — it holds private supplier URLs, so prefer copy/upload, or turn sharing off afterwards).
+
+* **Preview first**: shows create / update / error per row before anything is saved. Rows with errors are skipped.
+* Empty Slug → auto-made from the title (Arabic is transliterated), with `-2`, `-3` if taken. Explicit slugs that clash are errors.
+* Re-importing is safe: a row whose supplier URL already exists **updates** that book (existing slugs never change; empty cells keep current values).
+* Max 500 rows per import; everything is saved in one transaction. New books are picked up by the scheduler within minutes.
+
 ## Shop (cart → checkout → orders)
 
 * Customers: browse → **Add to cart** (only when 🟢 in stock and a price is set) → `/cart` → `/checkout` (shipping details) → pay → `/order/<unguessable id>`.
