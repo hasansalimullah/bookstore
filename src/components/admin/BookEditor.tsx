@@ -15,6 +15,7 @@ export default function BookEditor({ initial }: { initial: any }) {
     author: initial.author ?? "",
     slug: initial.slug ?? "",
     imageUrl: initial.imageUrl ?? "",
+    price: initial.priceCents === null || initial.priceCents === undefined ? "" : (initial.priceCents / 100).toFixed(2),
     description: initial.description ?? "",
     sourceUrl: initial.sourceUrl ?? "",
     published: initial.published as boolean,
@@ -95,6 +96,7 @@ export default function BookEditor({ initial }: { initial: any }) {
           <label className="text-sm">Title<input dir="rtl" className={inp} value={f.title} onChange={set("title")} /></label>
           <label className="text-sm">Author<input dir="rtl" className={inp} value={f.author} onChange={set("author")} /></label>
           <label className="text-sm">Slug<input dir="ltr" className={inp} value={f.slug} onChange={set("slug")} /></label>
+          <label className="text-sm">Price (e.g. 24.99)<input dir="ltr" className={inp} value={f.price} onChange={set("price")} /></label>
           <label className="text-sm">Image URL<input dir="ltr" className={inp} value={f.imageUrl} onChange={set("imageUrl")} /></label>
         </div>
         <label className="block text-sm">Description<textarea dir="rtl" rows={3} className={inp} value={f.description} onChange={set("description")} /></label>

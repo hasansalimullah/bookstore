@@ -53,6 +53,7 @@ export default function Dashboard() {
               <thead className="bg-stone-100 text-left">
                 <tr>
                   <th className="p-2">Title</th>
+                  <th className="p-2">Price</th>
                   <th className="p-2">Availability</th>
                   <th className="p-2">Last checked</th>
                   <th className="p-2">Last result</th>
@@ -67,6 +68,7 @@ export default function Dashboard() {
                       <Link href={`/admin/books/${b.id}`} className="font-medium text-emerald-800 underline" dir="auto">{b.title}</Link>
                       <div className="text-xs text-stone-500">/books/{b.slug}</div>
                     </td>
+                    <td className="p-2">{b.priceCents === null ? "—" : (b.priceCents / 100).toFixed(2)}</td>
                     <td className="p-2" dir="rtl"><AvailabilityBadge value={b.availability} /></td>
                     <td className="p-2">{fmt(b.lastChecked)}</td>
                     <td className="p-2">
@@ -101,7 +103,7 @@ export default function Dashboard() {
 }
 
 function AddBookForm({ onAdded }: { onAdded: () => void }) {
-  const empty = { title: "", author: "", slug: "", description: "", imageUrl: "", sourceUrl: "" };
+  const empty = { title: "", author: "", slug: "", description: "", imageUrl: "", sourceUrl: "", price: "" };
   const [f, setF] = useState(empty);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -126,13 +128,14 @@ function AddBookForm({ onAdded }: { onAdded: () => void }) {
     <section className="space-y-3 rounded-lg border border-stone-200 bg-white p-4">
       <h2 className="text-lg font-bold">Add Book</h2>
       <label className="block text-sm font-medium">
-        ibnaljawzi Product URL <span className="font-normal text-stone-500">(private — never shown to customers)</span>
-        <input dir="ltr" className={inp} placeholder="https://ibnaljawzi.com/xxxxxxxx  (or mock://available in mock mode)" value={f.sourceUrl} onChange={set("sourceUrl")} />
+        Supplier product URL <span className="font-normal text-stone-500">(private — never shown to customers)</span>
+        <input dir="ltr" className={inp} placeholder="Paste the supplier product link (or mock://available for testing)" value={f.sourceUrl} onChange={set("sourceUrl")} />
       </label>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="text-sm">Title (Arabic)<input dir="rtl" className={inp} value={f.title} onChange={set("title")} /></label>
         <label className="text-sm">Author<input dir="rtl" className={inp} value={f.author} onChange={set("author")} /></label>
         <label className="text-sm">Slug (optional, auto-made from the title)<input dir="ltr" className={inp} value={f.slug} onChange={set("slug")} /></label>
+        <label className="text-sm">Price (e.g. 24.99)<input dir="ltr" className={inp} value={f.price} onChange={set("price")} /></label>
         <label className="text-sm">Image URL (your own image)<input dir="ltr" className={inp} value={f.imageUrl} onChange={set("imageUrl")} /></label>
       </div>
       <label className="block text-sm">Description<textarea dir="rtl" rows={3} className={inp} value={f.description} onChange={set("description")} /></label>

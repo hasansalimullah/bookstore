@@ -24,4 +24,13 @@ export const config = {
   adminPassword: process.env.ADMIN_PASSWORD ?? "",
   sessionSecret: process.env.SESSION_SECRET ?? "",
   cronSecret: process.env.CRON_SECRET ?? "",
+
+  // ---- shop ----
+  /** "stripe" = pay with Stripe Checkout; "manual" = create the order and you arrange payment yourself (good for testing). */
+  paymentMode: (process.env.PAYMENT_MODE === "manual" ? "manual" : "stripe") as "stripe" | "manual",
+  currency: (process.env.CURRENCY ?? "usd").toLowerCase(),
+  shippingFlatCents: Math.max(0, Math.round(Number(process.env.SHIPPING_FLAT_CENTS ?? 1500)) || 0),
+  siteUrl: (process.env.SITE_URL ?? "").replace(/\/$/, ""),
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
 };

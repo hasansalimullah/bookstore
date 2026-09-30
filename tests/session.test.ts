@@ -31,7 +31,8 @@ test("passwordMatches is exact and fails closed on weak/empty config", () => {
 
 test("slugify", () => {
   assert.equal(slugify("Madarij al-Salikeen!"), "madarij-al-salikeen");
-  assert.match(slugify("مدارج السالكين"), /^book-[0-9a-f]{6}$/);
+  assert.equal(slugify("مدارج السالكين"), "mdarj-alsalkyn");
+  assert.match(slugify("!!!"), /^book-[0-9a-f]{6}$/);
   assert.ok(SLUG_RE.test("madarij-al-salikeen"));
   assert.ok(!SLUG_RE.test("Bad Slug"));
 });

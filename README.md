@@ -106,22 +106,53 @@ parse details · monitoring on/off per book · publish/unpublish.
 * Plan: keep the HTML checker as the default; ask them for API access. The fetch → evaluate split (`source-fetcher.ts` / `evaluate.ts`) is where a Salla adapter would plug in (Salla API → private backend → DB → your site; tokens in env/DB, never sent to the browser). I have **not** built the Salla adapter since there are no credentials yet.
 * Regardless of approach: check their `robots.txt` and terms of use, keep the request rate low (defaults are conservative), and set `USER_AGENT` to something with a contact email. A short message asking for permission is the safest route.
 
-## Deploying
+## Shop (cart → checkout → orders)
 
-**Option A — one small VPS (simplest, recommended):** Node 22 + managed or local PostgreSQL.
+* Customers: browse → **Add to cart** (only when 🟢 in stock and a price is set) → `/cart` → `/checkout` (shipping details) → pay → `/order/<unguessable id>`.
+* The server decides prices and availability at checkout; nothing from the browser is trusted. Flat worldwide shipping: `SHIPPING_FLAT_CENTS`.
+* `PAYMENT_MODE=manual` (default in `.env.example`): checkout just creates the order — use this to test the flow with no Stripe account.
+* `PAYMENT_MODE=stripe`: redirects to Stripe Checkout. Set `STRIPE_SECRET_KEY`, create a webhook in Stripe pointing to
+  `https://YOURSITE/api/stripe/webhook` (events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
+  `checkout.session.expired`, `checkout.session.async_payment_failed`) and put its signing secret in `STRIPE_WEBHOOK_SECRET`.
+  Only the signature-verified webhook marks an order **paid** (and only if the amount matches).
+* Admin → **Orders**: customer + address, items, the private supplier link (admin only) and current stock for each item, status
+  (`pending_payment → paid → ordered_from_supplier → shipped`), tracking info (shown to the customer), internal notes.
+* Orders and addresses are only reachable through admin routes. The customer order page shows items, totals and status only.
+* Not included yet: emails (Resend), refunds through Stripe (do those in the Stripe dashboard and set the order to `refunded`), taxes, per-country shipping rates, customer accounts.
+
+## Deploying on Cloudflare (Workers)
+
+Uses the OpenNext adapter (`@opennextjs/cloudflare`), which runs the Next.js app as a Worker. Already configured: `wrangler.jsonc`,
+`open-next.config.ts`, and a database layer that opens a short-lived connection per query when running on Workers.
+
 ```bash
-npm ci && npm run migrate && npm run build
-# two long-running processes (systemd or pm2):
-npm start                 # web (behind Caddy/nginx with HTTPS)
-npm run worker            # scheduler
+npm install
+npx wrangler login
+npm run cf:deploy          # builds + uploads; prints https://bookstore.<you>.workers.dev
 ```
-Set `NODE_ENV=production`, real `DATABASE_URL`, strong `ADMIN_PASSWORD`/`SESSION_SECRET`, `SOURCE_MODE=live`, `USER_AGENT`.
-Cookies are `Secure` in production, so serve over HTTPS.
 
-**Option B — Vercel + hosted Postgres (Neon/Supabase):** serverless has no long-running worker, so set `CRON_SECRET`
-(16+ chars) and call `GET /api/cron/check` every 5 minutes with `Authorization: Bearer <CRON_SECRET>`
-(Vercel Cron does this automatically when `CRON_SECRET` is set; add a `crons` entry in `vercel.json`). The route
-processes one batch (`CHECK_BATCH_SIZE`) per call. Note the in-memory per-host delay and login throttle are per-instance on serverless.
+Then in the Cloudflare dashboard → Workers & Pages → **bookstore** → Settings → Variables and Secrets, add these as **Secret** type
+(secrets survive redeploys): `DATABASE_URL`, `ADMIN_PASSWORD`, `SESSION_SECRET`, `SOURCE_MODE` (= `live`), `CRON_SECRET`, `USER_AGENT`,
+`CHECK_INTERVAL_MINUTES`, `PAYMENT_MODE`, `SHIPPING_FLAT_CENTS`, and for Stripe `SITE_URL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
+Run `npm run migrate` from your computer (with `DATABASE_URL` in your local `.env`) whenever a new migration file is added.
+
+**Scheduler:** Workers can't run `npm run worker`, so `cron-worker/` is a tiny second Worker with a Cron Trigger (every 5 min) that calls
+`/api/cron/check` through a service binding:
+
+```bash
+cd cron-worker
+npx wrangler deploy
+npx wrangler secret put CRON_SECRET     # paste the SAME value you used for the shop
+```
+
+If the service-binding call ever fails, use any external scheduler instead (e.g. cron-job.org): GET `https://YOURSITE/api/cron/check`
+with header `Authorization: Bearer <CRON_SECRET>`.
+
+Notes: Workers Free has a 3 MiB compressed size limit for the Worker — if the deploy reports the script is too large you need the
+Workers Paid plan. Connections to Postgres are opened per query on Workers; Cloudflare Hyperdrive would speed that up later.
+Cookies are `Secure`, so use the HTTPS URL. Custom domain: Workers → Settings → Domains & Routes.
+
+Other hosts (VPS / Vercel) still work: `npm run build && npm start` + `npm run worker` on a VPS; on Vercel use `/api/cron/check` with an external scheduler.
 
 ## Scaling from 5 → thousands of books
 

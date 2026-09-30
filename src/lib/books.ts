@@ -13,11 +13,12 @@ export interface PublicBook {
   author: string | null;
   description: string | null;
   imageUrl: string | null;
+  priceCents: number | null;
   availability: Availability;
   lastChecked: string | null;
 }
 
-const PUBLIC_COLS = `id, slug, title, author, description, image_url, availability, last_checked, last_success_at`;
+const PUBLIC_COLS = `id, slug, title, author, description, image_url, price_cents, availability, last_checked, last_success_at`;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function toPublic(r: any): PublicBook {
@@ -28,6 +29,7 @@ function toPublic(r: any): PublicBook {
     author: r.author,
     description: r.description,
     imageUrl: r.image_url,
+    priceCents: r.price_cents === null || r.price_cents === undefined ? null : Number(r.price_cents),
     availability: effectiveAvailability(r.availability, r.last_success_at, config.staleAfterMinutes),
     lastChecked: r.last_checked ? new Date(r.last_checked).toISOString() : null,
   };
@@ -98,15 +100,16 @@ export interface BookInput {
   author?: string | null;
   description?: string | null;
   imageUrl?: string | null;
+  priceCents?: number | null;
   slug: string;
   published?: boolean;
 }
 
 export async function createBook(input: BookInput, sourceUrl: string, sourceProductId: string | null): Promise<number> {
   const b = await query(
-    `INSERT INTO books (slug, title, author, description, image_url, published)
-     VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
-    [input.slug, input.title, input.author || null, input.description || null, input.imageUrl || null, input.published ?? true],
+    `INSERT INTO books (slug, title, author, description, image_url, price_cents, published)
+     VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+    [input.slug, input.title, input.author || null, input.description || null, input.imageUrl || null, input.priceCents ?? null, input.published ?? true],
   );
   const id = Number(b.rows[0].id);
   await query(`INSERT INTO book_sources (book_id, source_url_private, source_product_id) VALUES ($1,$2,$3)`, [id, sourceUrl, sourceProductId]);
@@ -121,9 +124,10 @@ export async function updateBook(
     `UPDATE books SET
         title = COALESCE($2, title), author = COALESCE($3, author), description = COALESCE($4, description),
         image_url = COALESCE($5, image_url), slug = COALESCE($6, slug), published = COALESCE($7, published),
+        price_cents = COALESCE($8, price_cents),
         updated_at = now()
       WHERE id = $1`,
-    [id, input.title ?? null, input.author ?? null, input.description ?? null, input.imageUrl ?? null, input.slug ?? null, input.published ?? null],
+    [id, input.title ?? null, input.author ?? null, input.description ?? null, input.imageUrl ?? null, input.slug ?? null, input.published ?? null, input.priceCents ?? null],
   );
   if (input.sourceUrl !== undefined || input.monitoringEnabled !== undefined) {
     await query(

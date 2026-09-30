@@ -10,15 +10,11 @@ const AR: Record<string, string> = {
 /** Works with English or Arabic titles. Arabic is transliterated: "مدارج السالكين" → "mdarj-alsalkyn" */
 export function slugify(input: string): string {
   const latin = input
-    .replace(/[\u064B-\u065F\u0670\u0640]/g, "") // remove Arabic diacritics
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
     .split("")
     .map((c) => (c in AR ? AR[c] : c))
     .join("");
-  const s = latin
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
+  const s = latin.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
   return s || `book-${randomBytes(3).toString("hex")}`;
 }
 

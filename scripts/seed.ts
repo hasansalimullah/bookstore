@@ -12,9 +12,9 @@ const books = [
 async function main() {
   for (const b of books) {
     const r = await pool.query(
-      `INSERT INTO books (slug, title, author, description) VALUES ($1,$2,$3,$4)
+      `INSERT INTO books (slug, title, author, description, price_cents) VALUES ($1,$2,$3,$4,$5)
        ON CONFLICT (slug) DO UPDATE SET title = EXCLUDED.title RETURNING id`,
-      [b.slug, b.title, b.author, "كتاب تجريبي لاختبار نظام التوفر."],
+      [b.slug, b.title, b.author, "Test book for the availability system.", 2499],
     );
     await pool.query(
       `INSERT INTO book_sources (book_id, source_url_private, source_product_id) VALUES ($1,$2,$3)

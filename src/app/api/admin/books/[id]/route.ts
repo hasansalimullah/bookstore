@@ -2,6 +2,7 @@ import { requireAdmin } from "@/lib/auth";
 import { deleteBook, getAdminBook, updateBook } from "@/lib/books";
 import { extractSourceProductId, validateSourceUrl } from "@/lib/source-fetcher";
 import { SLUG_RE } from "@/lib/slug";
+import { parseMoneyToCents } from "@/lib/shop";
 
 export const dynamic = "force-dynamic";
 type Ctx = { params: Promise<{ id: string }> };
@@ -31,6 +32,11 @@ export async function PATCH(req: Request, ctx: Ctx) {
   if (typeof b.author === "string") patch.author = b.author.trim();
   if (typeof b.description === "string") patch.description = b.description.trim();
   if (typeof b.imageUrl === "string") patch.imageUrl = b.imageUrl.trim();
+  if (typeof b.price === "string" && b.price.trim()) {
+    const c = parseMoneyToCents(b.price);
+    if (c === null) return Response.json({ error: "Invalid price (example: 12.50)" }, { status: 400 });
+    patch.priceCents = c;
+  }
   if (typeof b.published === "boolean") patch.published = b.published;
   if (typeof b.monitoringEnabled === "boolean") patch.monitoringEnabled = b.monitoringEnabled;
   if (typeof b.slug === "string" && b.slug.trim()) {

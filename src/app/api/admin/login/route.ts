@@ -6,7 +6,7 @@ import { SESSION_COOKIE, SESSION_TTL_MS, createSessionToken, passwordMatches } f
 const fails = new Map<string, { n: number; until: number }>();
 
 export async function POST(req: Request) {
-  const ip = (req.headers.get("x-forwarded-for") ?? "local").split(",")[0].trim();
+  const ip = (req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for") ?? "local").split(",")[0].trim();
   const rec = fails.get(ip);
   if (rec && rec.n >= 5 && rec.until > Date.now()) {
     return Response.json({ error: "too many attempts, try later" }, { status: 429 });

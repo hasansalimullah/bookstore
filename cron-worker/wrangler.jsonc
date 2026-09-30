@@ -1,0 +1,9 @@
+{
+  // A tiny separate Worker whose only job is to "poke" the shop every 5 minutes so availability checks run.
+  "name": "bookstore-cron",
+  "main": "src/index.js",
+  "compatibility_date": "2025-09-27",
+  "triggers": { "crons": ["*/5 * * * *"] },
+  // Talks to the shop Worker directly (no public internet hop). "service" = the shop's Worker name in ../wrangler.jsonc
+  "services": [{ "binding": "SHOP", "service": "bookstore" }]
+}

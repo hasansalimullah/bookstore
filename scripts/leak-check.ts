@@ -24,7 +24,7 @@ async function main() {
   const books = (JSON.parse(listText).books ?? []) as { slug: string }[];
   if (!books.length) console.warn("! no books found — run `npm run seed` first for a meaningful check");
 
-  const pages = ["/", ...books.map((b) => `/books/${b.slug}`)];
+  const pages = ["/", "/cart", "/checkout", ...books.map((b) => `/books/${b.slug}`)];
   const assets = new Set<string>();
   for (const p of pages) {
     const html = await (await get(p)).text();
@@ -36,13 +36,17 @@ async function main() {
   for (const a of assets) scan(`asset ${a.slice(0, 60)}`, await (await get(a)).text());
 
   // Admin must be locked for anonymous visitors.
-  for (const [method, path] of [["GET", "/api/admin/books"], ["GET", "/api/admin/books/1"], ["GET", "/api/admin/books/1/logs"], ["POST", "/api/admin/books/1/check"], ["POST", "/api/admin/test-connection"], ["POST", "/api/admin/test-parse"], ["DELETE", "/api/admin/books/1"]] as const) {
+  for (const [method, path] of [["GET", "/api/admin/books"], ["GET", "/api/admin/books/1"], ["GET", "/api/admin/books/1/logs"], ["POST", "/api/admin/books/1/check"], ["POST", "/api/admin/test-connection"], ["POST", "/api/admin/test-parse"], ["DELETE", "/api/admin/books/1"], ["GET", "/api/admin/orders"], ["GET", "/api/admin/orders/1"], ["PATCH", "/api/admin/orders/1"]] as const) {
     const r = await get(path, { method, headers: { "Content-Type": "application/json" }, body: method === "POST" ? "{}" : undefined });
     [401, 403].includes(r.status) ? pass(`${method} ${path} → ${r.status}`) : fail(`${method} ${path} → ${r.status} (expected 401/403)`);
   }
   const adminPage = await get("/admin");
   const loc = adminPage.headers.get("location") ?? "";
   adminPage.status >= 300 && adminPage.status < 400 && loc.includes("/admin/login") ? pass("/admin redirects anonymous users to login") : fail(`/admin → ${adminPage.status} ${loc}`);
+
+  // Stripe webhook must reject unsigned requests.
+  const wh = await get("/api/stripe/webhook", { method: "POST", body: "{}" });
+  wh.status === 400 ? pass("POST /api/stripe/webhook without signature → 400") : fail(`webhook → ${wh.status} (expected 400)`);
 
   // Public write attempts must fail.
   const w = await get("/api/books", { method: "POST", body: "{}" });

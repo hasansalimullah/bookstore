@@ -3,6 +3,7 @@ import { createBook, listAdminBooks } from "@/lib/books";
 import { checkBookNow } from "@/lib/checker";
 import { extractSourceProductId, validateSourceUrl } from "@/lib/source-fetcher";
 import { SLUG_RE, slugify } from "@/lib/slug";
+import { parseMoneyToCents } from "@/lib/shop";
 
 export const dynamic = "force-dynamic";
 
@@ -24,10 +25,13 @@ export async function POST(req: Request) {
   const slug = b.slug?.trim() ? b.slug.trim().toLowerCase() : slugify(b.title);
   if (!SLUG_RE.test(slug)) return Response.json({ error: "slug must be lowercase latin letters, digits and hyphens" }, { status: 400 });
 
+  const priceCents = b.price?.toString().trim() ? parseMoneyToCents(b.price) : null;
+  if (b.price?.toString().trim() && priceCents === null) return Response.json({ error: "Invalid price (example: 12.50)" }, { status: 400 });
+
   let id: number;
   try {
     id = await createBook(
-      { title: b.title.trim(), author: b.author?.trim(), description: b.description?.trim(), imageUrl: b.imageUrl?.trim(), slug },
+      { title: b.title.trim(), author: b.author?.trim(), description: b.description?.trim(), imageUrl: b.imageUrl?.trim(), priceCents, slug },
       v.url.toString(),
       extractSourceProductId(v.url),
     );

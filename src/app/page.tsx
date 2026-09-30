@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { listPublicBooks } from "@/lib/books";
 import AvailabilityBadge from "@/components/AvailabilityBadge";
+import { formatMoney } from "@/lib/shop";
+import { config } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +42,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
               <div className="space-y-2 p-4">
                 <h2 className="text-lg font-bold">{b.title}</h2>
                 {b.author && <p className="text-sm text-stone-500">{b.author}</p>}
+                {b.priceCents !== null && <p className="font-semibold text-emerald-800">{formatMoney(b.priceCents, config.currency)}</p>}
                 <AvailabilityBadge value={b.availability} />
               </div>
             </Link>
