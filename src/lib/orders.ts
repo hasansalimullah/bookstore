@@ -48,12 +48,35 @@ export async function cancelPendingOrder(orderId: number) {
   await query(`UPDATE orders SET status = 'cancelled', updated_at = now() WHERE id = $1 AND status = 'pending_payment'`, [orderId]);
 }
 
+export interface PublicOrder {
+  public_id: string;
+  status: OrderStatus;
+  currency: string;
+  subtotal_cents: number;
+  shipping_cents: number;
+  total_cents: number;
+  created_at: string;
+  tracking_info: string | null;
+  items: { title: string; unit_price_cents: number; quantity: number }[];
+}
+
 /** Customer-facing view: NO address, email or admin notes. */
-export async function getPublicOrder(publicId: string) {
+export async function getPublicOrder(publicId: string): Promise<PublicOrder | null> {
   const o = await query(`SELECT id, public_id, status, currency, subtotal_cents, shipping_cents, total_cents, created_at, tracking_info FROM orders WHERE public_id = $1`, [publicId]);
-  if (!o.rows[0]) return null;
-  const items = await query(`SELECT title, unit_price_cents, quantity FROM order_items WHERE order_id = $1 ORDER BY id`, [o.rows[0].id]);
-  return { ...o.rows[0], items: items.rows };
+  const row = o.rows[0];
+  if (!row) return null;
+  const items = await query(`SELECT title, unit_price_cents, quantity FROM order_items WHERE order_id = $1 ORDER BY id`, [row.id]);
+  return {
+    public_id: row.public_id,
+    status: row.status,
+    currency: row.currency,
+    subtotal_cents: Number(row.subtotal_cents),
+    shipping_cents: Number(row.shipping_cents),
+    total_cents: Number(row.total_cents),
+    created_at: new Date(row.created_at).toISOString(),
+    tracking_info: row.tracking_info,
+    items: items.rows.map((i) => ({ title: i.title, unit_price_cents: Number(i.unit_price_cents), quantity: Number(i.quantity) })),
+  };
 }
 
 /** Idempotent: only moves pending_payment → paid. Verifies the amount Stripe collected matches our order total. */

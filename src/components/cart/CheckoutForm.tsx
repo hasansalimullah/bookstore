@@ -44,8 +44,8 @@ export default function CheckoutForm() {
     );
 
   const inp = "w-full rounded-lg border border-stone-300 bg-white px-3 py-2 outline-none focus:border-emerald-600";
-  const Field = ({ k, label, type = "text", required = false }: { k: keyof typeof EMPTY; label: string; type?: string; required?: boolean }) => (
-    <label className="block text-sm">
+  const field = (k: keyof typeof EMPTY, label: string, type = "text", required = false) => (
+    <label key={k} className="block text-sm">
       {label}{required && " *"}
       <input type={type} value={f[k]} onChange={set(k)} className={inp} />
       {fields[k] && <span className="text-xs text-red-700">{fields[k]}</span>}
@@ -57,17 +57,17 @@ export default function CheckoutForm() {
       <h1 className="text-2xl font-bold">Checkout</h1>
       <p className="text-sm text-stone-600">Enter your shipping details. You&apos;ll pay securely on the next step.</p>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field k="name" label="Full name" required />
-        <Field k="email" label="Email" type="email" required />
-        <Field k="phone" label="Phone (optional)" type="tel" />
-        <Field k="country" label="Country" required />
+        {field("name", "Full name", "text", true)}
+        {field("email", "Email", "email", true)}
+        {field("phone", "Phone (optional)", "tel")}
+        {field("country", "Country", "text", true)}
       </div>
-      <Field k="line1" label="Address line 1" required />
-      <Field k="line2" label="Address line 2" />
+      {field("line1", "Address line 1", "text", true)}
+      {field("line2", "Address line 2")}
       <div className="grid gap-3 sm:grid-cols-3">
-        <Field k="city" label="City" required />
-        <Field k="region" label="State / region" />
-        <Field k="postalCode" label="Postal code" />
+        {field("city", "City", "text", true)}
+        {field("region", "State / region")}
+        {field("postalCode", "Postal code")}
       </div>
       {error && <p className="rounded bg-red-50 p-3 text-sm text-red-800">{error}</p>}
       <div className="flex items-center gap-4">
