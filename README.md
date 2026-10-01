@@ -147,7 +147,7 @@ Then in the Cloudflare dashboard → Workers & Pages → **bookstore** → Setti
 `CHECK_INTERVAL_MINUTES`, `PAYMENT_MODE`, `SHIPPING_FLAT_CENTS`, and for Stripe `SITE_URL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
 Run `npm run migrate` from your computer (with `DATABASE_URL` in your local `.env`) whenever a new migration file is added.
 
-**Scheduler:** Workers can't run `npm run worker`, so `cron-worker/` is a tiny second Worker with a Cron Trigger (every 5 min) that calls
+**Scheduler:** Workers can't run `npm run worker`, so `cron-worker/` is a tiny second Worker with a Cron Trigger (every minute, Cloudflare's minimum) that calls
 `/api/cron/check` through a service binding:
 
 ```bash
@@ -202,3 +202,10 @@ src/app/api/…                  public API, admin API, cron endpoint
 src/app/(public pages), admin/ storefront + dashboard + test lab
 tests/                         node:test suites
 ```
+
+## Freshness rules (why customers rarely see "Checking availability…")
+
+* A failed check never overwrites the last known status. The public site keeps showing it for up to `STALE_AFTER_MINUTES` (default 360); after that it shows "Checking availability…" and the book can't be added to the cart.
+* At checkout, any item the scheduler hasn't checked in the last 2 minutes is re-checked live (max 5). A confirmed out-of-stock blocks the order; an inconclusive check falls back to the last known status.
+* Admin shows a red banner if no scheduled check has run recently (usually: the cron-worker isn't deployed).
+* `CHECK_INTERVAL_MINUTES=1` + the every-minute cron = each book is checked about once a minute. Checking 500+ books that often is not possible politely (see "Scaling").

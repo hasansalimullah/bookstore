@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { evaluateFetch, nextDelayMs, effectiveAvailability } from "../src/lib/evaluate.ts";
+import { evaluateFetch, nextDelayMs, effectiveAvailability, needsLiveCheck } from "../src/lib/evaluate.ts";
 import type { FetchResult } from "../src/lib/source-fetcher.ts";
 import * as F from "../src/lib/fixtures.ts";
 
@@ -61,4 +61,11 @@ test("effectiveAvailability: stale successes degrade to unknown", () => {
   assert.equal(effectiveAvailability("available", "2026-09-29T10:00:00Z", 60, now), "unknown");
   assert.equal(effectiveAvailability("out_of_stock", null, 60, now), "unknown");
   assert.equal(effectiveAvailability("unknown", "2026-09-29T11:59:00Z", 60, now), "unknown");
+});
+
+test("needsLiveCheck: skip when the scheduler checked recently", () => {
+  const now = new Date("2026-09-30T12:00:00Z");
+  assert.equal(needsLiveCheck("2026-09-30T11:59:30Z", 120, now), false);
+  assert.equal(needsLiveCheck("2026-09-30T11:55:00Z", 120, now), true);
+  assert.equal(needsLiveCheck(null, 120, now), true);
 });

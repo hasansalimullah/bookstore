@@ -5,7 +5,7 @@ import { pool } from "./db.ts";
 import { fetchSourcePage, type FetchResult } from "./source-fetcher.ts";
 import { evaluateFetch, nextDelayMs, type Evaluation } from "./evaluate.ts";
 
-export type Trigger = "scheduled" | "manual" | "test";
+export type Trigger = "scheduled" | "manual" | "test" | "checkout";
 
 export interface CheckOutcome {
   bookId: number;
@@ -48,7 +48,8 @@ export async function runCheck(bookId: number, url: string, prevFailures: number
     await client.query("BEGIN");
     await client.query(
       `UPDATE books
-          SET availability = $2,
+          -- A failed check must NOT flip the book to "unknown": keep the last known status.
+          SET availability = CASE WHEN $4 = 'ok' THEN $2 ELSE availability END,
               last_checked = $3,
               last_success_at = CASE WHEN $4 = 'ok' THEN $3 ELSE last_success_at END,
               updated_at = now()
@@ -102,13 +103,13 @@ export async function runCheck(bookId: number, url: string, prevFailures: number
 }
 
 /** Manual "Check Now" for a book id (admin). */
-export async function checkBookNow(bookId: number): Promise<CheckOutcome | null> {
+export async function checkBookNow(bookId: number, trigger: Trigger = "manual"): Promise<CheckOutcome | null> {
   const { rows } = await pool.query(
     "SELECT source_url_private, consecutive_failures FROM book_sources WHERE book_id = $1",
     [bookId],
   );
   if (!rows[0]) return null;
-  return runCheck(bookId, rows[0].source_url_private, rows[0].consecutive_failures, "manual");
+  return runCheck(bookId, rows[0].source_url_private, rows[0].consecutive_failures, trigger);
 }
 
 /** Process one batch of due books with limited concurrency. Returns how many were checked. */

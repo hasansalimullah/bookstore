@@ -75,3 +75,9 @@ export function effectiveAvailability(
   const age = now.getTime() - new Date(lastSuccessAt).getTime();
   return age > staleAfterMinutes * 60_000 ? "unknown" : stored;
 }
+
+/** Should we re-check this book live right before an order? (Skip when the scheduler already checked it recently.) */
+export function needsLiveCheck(lastChecked: Date | string | null, freshSeconds: number, now: Date = new Date()): boolean {
+  if (!lastChecked) return true;
+  return now.getTime() - new Date(lastChecked).getTime() > freshSeconds * 1000;
+}

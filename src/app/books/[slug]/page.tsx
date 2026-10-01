@@ -54,7 +54,7 @@ export default async function BookPage({ params }: Props) {
         <AddToCart
           bookId={book.id}
           canBuy={book.availability === "available" && book.priceCents !== null}
-          reason={book.priceCents === null ? "Price not set" : book.availability === "out_of_stock" ? "Out of stock" : "Currently unavailable"}
+          reason={book.priceCents === null ? "Price not set" : book.availability === "out_of_stock" ? "Out of stock" : "Checking availability…"}
         />
         {book.lastChecked && (
           <p className="text-xs text-stone-500">

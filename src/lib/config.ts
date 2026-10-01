@@ -11,7 +11,7 @@ export const config = {
   checkTimeoutMs: num(process.env.CHECK_TIMEOUT_MS, 10_000),
   checkConcurrency: num(process.env.CHECK_CONCURRENCY, 2),
   checkMinDelayMs: num(process.env.CHECK_MIN_DELAY_MS, 1_500),
-  checkBatchSize: num(process.env.CHECK_BATCH_SIZE, 25),
+  checkBatchSize: num(process.env.CHECK_BATCH_SIZE, 15),
   userAgent: process.env.USER_AGENT ?? "BookstoreAvailabilityBot/0.1",
   /** Only these hosts may be used as monitoring sources (SSRF guard). */
   allowedSourceHosts: (process.env.ALLOWED_SOURCE_HOSTS ?? "ibnaljawzi.com,www.ibnaljawzi.com")
@@ -19,7 +19,7 @@ export const config = {
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean),
   /** If no definite answer for this long, the public site shows "unknown" (stale-data protection). */
-  staleAfterMinutes: num(process.env.STALE_AFTER_MINUTES, 60),
+  staleAfterMinutes: num(process.env.STALE_AFTER_MINUTES, 360),
   logRetentionDays: num(process.env.LOG_RETENTION_DAYS, 30),
   adminPassword: process.env.ADMIN_PASSWORD ?? "",
   sessionSecret: process.env.SESSION_SECRET ?? "",

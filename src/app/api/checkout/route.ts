@@ -1,6 +1,7 @@
 import { config } from "@/lib/config";
 import { query } from "@/lib/db";
-import { effectiveAvailability } from "@/lib/evaluate";
+import { effectiveAvailability, needsLiveCheck } from "@/lib/evaluate";
+import { checkBookNow } from "@/lib/checker";
 import { cancelPendingOrder, createOrder, setStripeSession } from "@/lib/orders";
 import { computeTotals, normalizeCart, validateCustomer } from "@/lib/shop";
 import { createCheckoutSession } from "@/lib/stripe";
@@ -29,10 +30,26 @@ export async function POST(req: Request) {
   try {
     // Server decides prices and availability — nothing from the browser is trusted.
     const { rows } = await query(
-      `SELECT id, title, price_cents, availability, last_success_at FROM books WHERE published AND id = ANY($1::bigint[])`,
+      `SELECT id, title, price_cents, availability, last_success_at, last_checked FROM books WHERE published AND id = ANY($1::bigint[])`,
       [cart.map((c) => c.bookId)],
     );
     const byId = new Map(rows.map((r) => [Number(r.id), r]));
+
+    // Re-check live any item the scheduler hasn't looked at in the last 2 minutes (max 5, one after another to stay polite).
+    const stale = rows.filter((r) => needsLiveCheck(r.last_checked, 120)).slice(0, 5);
+    for (const r of stale) {
+      try {
+        const out = await checkBookNow(Number(r.id), "checkout");
+        if (out && out.evaluation.outcome === "ok") {
+          r.availability = out.evaluation.availability;
+          r.last_success_at = out.checkedAt;
+        }
+        // If the live check failed we keep the last known status (it is still subject to the stale window below).
+      } catch {
+        /* ignore: fall back to stored status */
+      }
+    }
+
     const problems: string[] = [];
     const lines = cart.flatMap((c) => {
       const r = byId.get(c.bookId);
