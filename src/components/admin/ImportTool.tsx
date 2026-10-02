@@ -50,8 +50,8 @@ export default function ImportTool() {
       <h1 className="text-xl font-bold">Import books from a Google Sheet</h1>
 
       <section className="space-y-2 rounded-lg border border-stone-200 bg-white p-4 text-sm">
-        <p className="font-medium">Your sheet needs these column headers in row 1 (any order; only the first two are required):</p>
-        <p className="rounded bg-stone-50 p-2 font-mono text-xs">Supplier product URL | Title | Author | Slug | Price | Image URL | Description</p>
+        <p className="font-medium">Your sheet needs these column headers in row 1 (any order; only the supplier URL and a title are required):</p>
+        <p className="rounded bg-stone-50 p-2 font-mono text-xs">Supplier product URL | Title | Title (Arabic) | Author | Slug | Price | Category | Image URL | Image URL 2 | Image URL 3 | Description | Edition | Cover | Print Quality | Format | Harakat</p>
         <ul className="list-disc space-y-1 pl-5 text-stone-700">
           <li>Empty Slug = made automatically from the title. Empty Price = book can&apos;t be ordered until you add one.</li>
           <li>Importing the same sheet again is safe: rows with a supplier URL that already exists <b>update</b> that book (its page URL never changes).</li>

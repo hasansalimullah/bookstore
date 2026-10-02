@@ -4,6 +4,7 @@ import { checkBookNow } from "@/lib/checker";
 import { extractSourceProductId, validateSourceUrl } from "@/lib/source-fetcher";
 import { SLUG_RE, slugify } from "@/lib/slug";
 import { parseMoneyToCents } from "@/lib/shop";
+import { readExtraImages, readTextFields } from "@/lib/book-fields";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,8 @@ export async function POST(req: Request) {
   if (denied) return denied;
 
   const b = (await req.json().catch(() => null)) as Record<string, string> | null;
+  const extra = readExtraImages(b?.extraImages);
+  if (extra === null) return Response.json({ error: "Extra image URLs must start with https://" }, { status: 400 });
   if (!b?.title?.trim()) return Response.json({ error: "العنوان مطلوب (title required)" }, { status: 400 });
   const v = validateSourceUrl(String(b.sourceUrl ?? ""));
   if (!v.ok) return Response.json({ error: v.error }, { status: 400 });
@@ -31,7 +34,7 @@ export async function POST(req: Request) {
   let id: number;
   try {
     id = await createBook(
-      { title: b.title.trim(), author: b.author?.trim(), description: b.description?.trim(), imageUrl: b.imageUrl?.trim(), priceCents, slug },
+      { title: b.title.trim(), ...readTextFields(b), extraImages: extra ?? [], priceCents, slug },
       v.url.toString(),
       extractSourceProductId(v.url),
     );

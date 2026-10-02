@@ -1,7 +1,9 @@
 // Pure import logic: CSV text → validated, de-duplicated plan (create / update / error). No DB, no network.
 import { parseDelimited } from "./csv.ts";
 
-export type Field = "sourceUrl" | "title" | "author" | "slug" | "price" | "imageUrl" | "description";
+export type Field =
+  | "sourceUrl" | "title" | "titleAr" | "author" | "slug" | "price" | "imageUrl" | "imageUrl2" | "imageUrl3"
+  | "description" | "category" | "edition" | "cover" | "printQuality" | "format" | "harakat";
 
 export interface RawRecord {
   row: number; // spreadsheet row number (header = 1)
@@ -33,9 +35,18 @@ export interface PlannedRow {
   // --- private data (never sent to the browser) ---
   sourceUrl?: string;
   sourceProductId?: string | null;
+  titleAr?: string | null;
   author?: string | null;
   description?: string | null;
+  category?: string | null;
+  edition?: string | null;
+  cover?: string | null;
+  printQuality?: string | null;
+  format?: string | null;
+  harakat?: string | null;
   imageUrl?: string | null;
+  /** extra image URLs joined by newlines ("" if none) */
+  extraImages?: string;
   priceCents?: number | null;
 }
 
@@ -46,13 +57,23 @@ const norm = (h: string) => h.toLowerCase().replace(/[^a-z0-9\u0600-\u06FF]/g, "
 export function columnFor(header: string): Field | null {
   const n = norm(header);
   if (!n) return null;
-  if (/^(image|photo|cover|picture|img)/.test(n)) return "imageUrl";
+  if (/^(image|photo|cover?image|picture|img)/.test(n)) {
+    const m = n.match(/([23])$/);
+    return m ? (`imageUrl${m[1]}` as Field) : "imageUrl";
+  }
   if (/^(supplier|source|producturl|ibnaljawzi)/.test(n) || n === "url" || n === "link") return "sourceUrl";
-  if (/^(title|bookname|booktitle)/.test(n) || n === "name" || n === "book") return "title";
+  if (/^(titlearabic|arabictitle|titlear|arabicname|namearabic)/.test(n) || /^title.*arabic/.test(n)) return "titleAr";
+  if (/^(title|bookname|booktitle|titleenglish|englishtitle)/.test(n) || n === "name" || n === "book") return "title";
   if (/^(author|writer)/.test(n)) return "author";
   if (/^slug/.test(n)) return "slug";
   if (/^(price|cost)/.test(n)) return "price";
   if (/^(description|desc|details|about)/.test(n)) return "description";
+  if (/^(category|categories|section)/.test(n)) return "category";
+  if (/^(edition|publisher)/.test(n)) return "edition";
+  if (/^cover/.test(n)) return "cover";
+  if (/^(printquality|print)/.test(n)) return "printQuality";
+  if (/^(format|size|dimensions)/.test(n)) return "format";
+  if (/^harakat/.test(n)) return "harakat";
   return null;
 }
 
@@ -69,7 +90,8 @@ export function parseRecords(text: string): { records: RawRecord[]; error: strin
       seen.add(f);
     }
   });
-  const missing = (["sourceUrl", "title"] as Field[]).filter((f) => !seen.has(f));
+  const missing = (["sourceUrl"] as Field[]).filter((f) => !seen.has(f));
+  if (!seen.has("title") && !seen.has("titleAr")) missing.push("title");
   if (missing.length) {
     const label = { sourceUrl: "Supplier product URL", title: "Title" } as Record<string, string>;
     return { records: [], headers, error: `Missing required column(s): ${missing.map((m) => label[m]).join(", ")}. Found headers: ${headers.filter(Boolean).join(" | ") || "(none)"}` };
@@ -103,7 +125,7 @@ export function planImport(records: RawRecord[], existing: ExistingBook[], deps:
 
   return records.map((rec): PlannedRow => {
     const v = rec.values;
-    const title = (v.title ?? "").slice(0, 300);
+    const title = (v.title || v.titleAr || "").slice(0, 300);
     const fail = (error: string): PlannedRow => ({ row: rec.row, action: "error", title, slug: null, error, warnings: [], existingId: null });
 
     if (!title) return fail("Title is empty");
@@ -117,7 +139,8 @@ export function planImport(records: RawRecord[], existing: ExistingBook[], deps:
       priceCents = deps.parsePrice(v.price);
       if (priceCents === null) return fail(`Invalid price "${v.price}" (use a number like 24.99)`);
     }
-    if (v.imageUrl && !/^https:\/\/\S+$/i.test(v.imageUrl)) return fail("Image URL must start with https://");
+    const imgs = [v.imageUrl, v.imageUrl2, v.imageUrl3].map((x) => (x ?? "").trim());
+    if (imgs.some((x) => x && !/^https:\/\/\S+$/i.test(x))) return fail("Image URLs must start with https://");
 
     const warnings: string[] = [];
     const key = urlKey(vu.url);
@@ -133,9 +156,17 @@ export function planImport(records: RawRecord[], existing: ExistingBook[], deps:
       error: null,
       sourceUrl: vu.url.toString(),
       sourceProductId: deps.productId(vu.url),
+      titleAr: v.titleAr ? v.titleAr.slice(0, 300) : null,
       author: v.author ? v.author.slice(0, 200) : null,
       description: v.description ? v.description.slice(0, 5000) : null,
-      imageUrl: v.imageUrl || null,
+      category: v.category ? v.category.slice(0, 300) : null,
+      edition: v.edition ? v.edition.slice(0, 300) : null,
+      cover: v.cover ? v.cover.slice(0, 300) : null,
+      printQuality: v.printQuality ? v.printQuality.slice(0, 300) : null,
+      format: v.format ? v.format.slice(0, 300) : null,
+      harakat: v.harakat ? v.harakat.slice(0, 300) : null,
+      imageUrl: imgs[0] || null,
+      extraImages: [imgs[1], imgs[2]].filter(Boolean).join("\n"),
       priceCents,
     };
 

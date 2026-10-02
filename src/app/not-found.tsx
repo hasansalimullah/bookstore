@@ -1,9 +1,10 @@
 import Link from "next/link";
+
 export default function NotFound() {
   return (
-    <div className="py-20 text-center">
-      <h1 className="mb-2 text-2xl font-bold">Page not found</h1>
-      <Link href="/" className="text-emerald-700 underline">Back to home</Link>
+    <div style={{ padding: "120px 24px", textAlign: "center", fontFamily: "var(--font-poppins), Poppins, sans-serif" }}>
+      <h1 style={{ fontSize: 28, fontWeight: 600, marginBottom: 12 }}>Page not found</h1>
+      <Link href="/" style={{ textDecoration: "underline", color: "#846a40" }}>Back to home</Link>
     </div>
   );
 }

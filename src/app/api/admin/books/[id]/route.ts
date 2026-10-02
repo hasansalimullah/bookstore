@@ -3,6 +3,7 @@ import { deleteBook, getAdminBook, updateBook } from "@/lib/books";
 import { extractSourceProductId, validateSourceUrl } from "@/lib/source-fetcher";
 import { SLUG_RE } from "@/lib/slug";
 import { parseMoneyToCents } from "@/lib/shop";
+import { readExtraImages, readTextFields } from "@/lib/book-fields";
 
 export const dynamic = "force-dynamic";
 type Ctx = { params: Promise<{ id: string }> };
@@ -29,9 +30,10 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
   const patch: Parameters<typeof updateBook>[1] = {};
   if (typeof b.title === "string" && b.title.trim()) patch.title = b.title.trim();
-  if (typeof b.author === "string") patch.author = b.author.trim();
-  if (typeof b.description === "string") patch.description = b.description.trim();
-  if (typeof b.imageUrl === "string") patch.imageUrl = b.imageUrl.trim();
+  Object.assign(patch, readTextFields(b));
+  const extra = readExtraImages(b.extraImages);
+  if (extra === null) return Response.json({ error: "Extra image URLs must start with https://" }, { status: 400 });
+  if (extra !== undefined) patch.extraImages = extra;
   if (typeof b.price === "string" && b.price.trim()) {
     const c = parseMoneyToCents(b.price);
     if (c === null) return Response.json({ error: "Invalid price (example: 12.50)" }, { status: 400 });

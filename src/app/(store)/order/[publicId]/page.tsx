@@ -23,7 +23,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   if (!order) notFound();
 
   return (
-    <div className="mx-auto max-w-xl space-y-5">
+    <div className="mx-auto max-w-xl space-y-5 px-4 py-10">
       <h1 className="text-2xl font-bold">Order {String(order.public_id).slice(0, 8).toUpperCase()}</h1>
       {paid === "1" && order.status === "pending_payment" && (
         <p className="rounded bg-amber-50 p-3 text-sm text-amber-800">Thanks! We&apos;re confirming your payment — refresh this page in a moment.</p>

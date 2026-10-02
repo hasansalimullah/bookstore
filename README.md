@@ -209,3 +209,15 @@ tests/                         node:test suites
 * At checkout, any item the scheduler hasn't checked in the last 2 minutes is re-checked live (max 5). A confirmed out-of-stock blocks the order; an inconclusive check falls back to the last known status.
 * Admin shows a red banner if no scheduled check has run recently (usually: the cron-worker isn't deployed).
 * `CHECK_INTERVAL_MINUTES=1` + the every-minute cron = each book is checked about once a minute. Checking 500+ books that often is not possible politely (see "Scaling").
+
+## Storefront design
+
+The home page and product page follow the Canva mockups (1366px desktop; a simple responsive fallback below 1100px).
+
+* **Styles:** `src/app/store.css` (design tokens at the top: tan `#ccb38b`, dark `#4b4234`, brown `#846a40`, gold `#bc9353`). Fonts: Poppins, Oswald, Inter, Noto Sans Arabic via `next/font`.
+* **Content you edit:** `src/content/site.ts` — announcement bar, nav links, hero slides, carousel sections (title + category), promo cards, link buttons, contact block, stats, newsletter, footer text/links.
+* **Images:** `public/assets/` (logo, pattern, stat icons, hero banner, promo images). These were cut out of the mockup PNGs at 1x — replace with the original/high-resolution files (same filenames) for crisp results on retina screens.
+* **Per-book fields** (admin + import): Title, Title (Arabic), Author, Category (`Fiqh & Ahkam > Fiqh Hanbali > Usul Madhhab` → breadcrumb), Price, main image + up to 2 extra images (thumbnails), Description, Edition, Cover, Print Quality, Format, Harakat.
+* **Carousels** show books whose Category contains the section's `category` word (e.g. "Tafsir"); until you have such books they show the newest books.
+* **Newsletter:** emails are saved in the database (Admin → Subscribers (CSV)). No email is sent automatically.
+* Wishlist (heart) is saved in the visitor's browser only; Account/Login/Registration pages are placeholders ("coming soon").

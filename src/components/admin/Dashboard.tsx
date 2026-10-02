@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import AvailabilityBadge from "@/components/AvailabilityBadge";
 import DebugPanel from "./DebugPanel";
+import BookFields, { BOOK_FIELD_DEFAULTS } from "./BookFields";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const fmt = (s: string | null) => (s ? new Date(s).toISOString().replace("T", " ").slice(0, 16) + " UTC" : "—");
@@ -103,12 +104,12 @@ export default function Dashboard() {
 }
 
 function AddBookForm({ onAdded }: { onAdded: () => void }) {
-  const empty = { title: "", author: "", slug: "", description: "", imageUrl: "", sourceUrl: "", price: "" };
+  const empty = { ...BOOK_FIELD_DEFAULTS, sourceUrl: "" };
   const [f, setF] = useState(empty);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const set = (k: keyof typeof empty) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
+  const set = (k: keyof typeof empty) => (e: any) => setF({ ...f, [k]: e.target.value });
 
   async function submit() {
     setBusy(true);
@@ -131,14 +132,7 @@ function AddBookForm({ onAdded }: { onAdded: () => void }) {
         Supplier product URL <span className="font-normal text-stone-500">(private — never shown to customers)</span>
         <input dir="ltr" className={inp} placeholder="Paste the supplier product link (or mock://available for testing)" value={f.sourceUrl} onChange={set("sourceUrl")} />
       </label>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="text-sm">Title (Arabic)<input dir="rtl" className={inp} value={f.title} onChange={set("title")} /></label>
-        <label className="text-sm">Author<input dir="rtl" className={inp} value={f.author} onChange={set("author")} /></label>
-        <label className="text-sm">Slug (optional, auto-made from the title)<input dir="ltr" className={inp} value={f.slug} onChange={set("slug")} /></label>
-        <label className="text-sm">Price (e.g. 24.99)<input dir="ltr" className={inp} value={f.price} onChange={set("price")} /></label>
-        <label className="text-sm">Image URL (your own image)<input dir="ltr" className={inp} value={f.imageUrl} onChange={set("imageUrl")} /></label>
-      </div>
-      <label className="block text-sm">Description<textarea dir="rtl" rows={3} className={inp} value={f.description} onChange={set("description")} /></label>
+      <BookFields f={f} set={set as any} />
       {error && <p className="text-sm text-red-700">{error}</p>}
       <button onClick={submit} disabled={busy || !f.title || !f.sourceUrl} className="rounded bg-emerald-700 px-4 py-2 text-white disabled:opacity-50">
         {busy ? "Checking source…" : "Import / Add Book"}

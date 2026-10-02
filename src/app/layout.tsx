@@ -1,30 +1,26 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Inter, Noto_Sans_Arabic, Oswald, Poppins } from "next/font/google";
 import "./globals.css";
+import "./store.css";
 import { CartProvider } from "@/components/cart/CartProvider";
-import CartLink from "@/components/cart/CartLink";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_NAME ?? "Ahlul Ilm Books";
 
+const poppins = Poppins({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"], variable: "--font-poppins", display: "swap" });
+const arabic = Noto_Sans_Arabic({ subsets: ["arabic"], weight: ["400", "500", "600"], variable: "--font-arabic", display: "swap" });
+const inter = Inter({ subsets: ["latin"], weight: ["300", "400"], variable: "--font-inter", display: "swap" });
+const oswald = Oswald({ subsets: ["latin"], weight: ["300", "400", "500"], style: ["normal"], variable: "--font-oswald", display: "swap" });
+
 export const metadata: Metadata = {
   title: { default: SITE, template: `%s | ${SITE}` },
-  description: "Islamic bookstore",
+  description: "Arabic Islamic books, delivered worldwide.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" dir="ltr" translate="no" suppressHydrationWarning>
+    <html lang="en" dir="ltr" translate="no" suppressHydrationWarning className={`${poppins.variable} ${arabic.variable} ${oswald.variable} ${inter.variable}`}>
       <body className="min-h-screen antialiased" suppressHydrationWarning>
-        <CartProvider>
-        <header className="border-b border-stone-200 bg-white">
-          <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-            <Link href="/" className="text-xl font-bold text-emerald-800">{SITE}</Link>
-            <nav className="flex items-center gap-4 text-sm text-stone-600"><Link href="/">Books</Link><CartLink /></nav>
-          </div>
-        </header>
-        <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
-        <footer className="mx-auto max-w-5xl px-4 py-10 text-center text-xs text-stone-500">© {SITE}</footer>
-        </CartProvider>
+        <CartProvider>{children}</CartProvider>
       </body>
     </html>
   );

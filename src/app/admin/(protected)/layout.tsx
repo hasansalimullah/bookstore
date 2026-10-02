@@ -48,6 +48,7 @@ export default async function ProtectedAdminLayout({ children }: { children: Rea
           <Link href="/admin">Books</Link>
           <Link href="/admin/import">Import</Link>
           <Link href="/admin/orders">Orders</Link>
+          <a href="/api/admin/subscribers">Subscribers (CSV)</a>
           <Link href="/admin/test">Test / Simulation</Link>
           <Link href="/" target="_blank">View site ↗</Link>
         </nav>

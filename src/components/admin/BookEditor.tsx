@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AvailabilityBadge from "@/components/AvailabilityBadge";
 import DebugPanel from "./DebugPanel";
+import BookFields from "./BookFields";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const fmt = (s: string | null) => (s ? new Date(s).toISOString().replace("T", " ").slice(0, 19) + " UTC" : "—");
@@ -10,12 +11,20 @@ const fmt = (s: string | null) => (s ? new Date(s).toISOString().replace("T", " 
 export default function BookEditor({ initial }: { initial: any }) {
   const router = useRouter();
   const [b, setB] = useState(initial);
-  const [f, setF] = useState({
+  const [f, setF] = useState<Record<string, any>>({
     title: initial.title ?? "",
+    titleAr: initial.titleAr ?? "",
     author: initial.author ?? "",
     slug: initial.slug ?? "",
-    imageUrl: initial.imageUrl ?? "",
     price: initial.priceCents === null || initial.priceCents === undefined ? "" : (initial.priceCents / 100).toFixed(2),
+    category: initial.category ?? "",
+    imageUrl: initial.imageUrl ?? "",
+    extraImages: (initial.extraImages ?? []).join("\n"),
+    edition: initial.edition ?? "",
+    cover: initial.cover ?? "",
+    printQuality: initial.printQuality ?? "",
+    format: initial.format ?? "",
+    harakat: initial.harakat ?? "",
     description: initial.description ?? "",
     sourceUrl: initial.sourceUrl ?? "",
     published: initial.published as boolean,
@@ -92,14 +101,7 @@ export default function BookEditor({ initial }: { initial: any }) {
       <section className="space-y-3 rounded-lg border border-stone-200 bg-white p-4">
         <h2 className="font-bold">Edit</h2>
         <label className="block text-sm">Private source URL<input dir="ltr" className={inp} value={f.sourceUrl} onChange={set("sourceUrl")} /></label>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="text-sm">Title<input dir="rtl" className={inp} value={f.title} onChange={set("title")} /></label>
-          <label className="text-sm">Author<input dir="rtl" className={inp} value={f.author} onChange={set("author")} /></label>
-          <label className="text-sm">Slug<input dir="ltr" className={inp} value={f.slug} onChange={set("slug")} /></label>
-          <label className="text-sm">Price (e.g. 24.99)<input dir="ltr" className={inp} value={f.price} onChange={set("price")} /></label>
-          <label className="text-sm">Image URL<input dir="ltr" className={inp} value={f.imageUrl} onChange={set("imageUrl")} /></label>
-        </div>
-        <label className="block text-sm">Description<textarea dir="rtl" rows={3} className={inp} value={f.description} onChange={set("description")} /></label>
+        <BookFields f={f} set={set} />
         <div className="flex gap-6 text-sm">
           <label><input type="checkbox" checked={f.published} onChange={set("published")} /> Published</label>
           <label><input type="checkbox" checked={f.monitoringEnabled} onChange={set("monitoringEnabled")} /> Monitoring enabled</label>

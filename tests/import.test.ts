@@ -49,7 +49,13 @@ test("sheets: link conversion", () => {
 
 test("headers map from the user's real column names", () => {
   assert.equal(columnFor("Supplier product URL (private — never shown to customers)"), "sourceUrl");
-  assert.equal(columnFor("Title (Arabic)"), "title");
+  assert.equal(columnFor("Title (Arabic)"), "titleAr");
+  assert.equal(columnFor("Title (English)"), "title");
+  assert.equal(columnFor("Title"), "title");
+  assert.equal(columnFor("Category"), "category");
+  assert.equal(columnFor("Print Quality"), "printQuality");
+  assert.equal(columnFor("Image URL 2"), "imageUrl2");
+  assert.equal(columnFor("Image URL 3"), "imageUrl3");
   assert.equal(columnFor("Author"), "author");
   assert.equal(columnFor("Slug (optional, auto-made from the title)"), "slug");
   assert.equal(columnFor("Price (e.g. 24.99)"), "price");
@@ -114,4 +120,22 @@ test("plan: mock URLs may repeat (seed/testing)", () => {
   const { records } = parseRecords(csv(["mock://available,A,,,,,", "mock://available,B,,,,,"]));
   const plan = planImport(records, [], { ...deps, validateUrl: (u) => ({ ok: true, url: new URL(u) }) });
   assert.deepEqual(plan.map((p) => p.action), ["create", "create"]);
+});
+
+test("plan: only an Arabic title column → used as the title; extra fields + images carried", () => {
+  const t = "Supplier product URL,Title (Arabic),Category,Image URL,Image URL 2,Image URL 3\nhttps://a.supplier.test/p9,مدارج السالكين,Aqeeda > Tawhid,https://i.test/1.jpg,https://i.test/2.jpg,https://i.test/3.jpg";
+  const { records, error } = parseRecords(t);
+  assert.equal(error, null);
+  const [p] = planImport(records, [], deps);
+  assert.equal(p.action, "create");
+  assert.equal(p.title, "مدارج السالكين");
+  assert.equal(p.titleAr, "مدارج السالكين");
+  assert.equal(p.category, "Aqeeda > Tawhid");
+  assert.equal(p.imageUrl, "https://i.test/1.jpg");
+  assert.equal(p.extraImages, "https://i.test/2.jpg\nhttps://i.test/3.jpg");
+});
+
+test("plan: image URL must be https", () => {
+  const { records } = parseRecords(csv(["https://a.supplier.test/p1,A,,,,http://i.test/x.jpg,"]));
+  assert.equal(planImport(records, [], deps)[0].action, "error");
 });
