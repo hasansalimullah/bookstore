@@ -1,5 +1,9 @@
 // ALL editable storefront content lives here (texts, links, sections). Plain data — safe to import anywhere.
 
+declare const process: {
+  env: Record<string, string | undefined>;
+};
+
 export interface HeroSlide {
   /** Full-bleed banner image (optional). If empty, a text slide is drawn from title/subtitle/text. */
   image: string | null;
