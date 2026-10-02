@@ -80,7 +80,7 @@ export const site = {
     ],
     button: "CONTACT FORM",
     /** Set CONTACT_EMAIL in your environment (or edit here). */
-    email: process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "contact@example.com",
+    email: process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "ahlulilmbooks@gmail.com",
   },
 
   statsHeading: ["YOUR ARABIC ISLAMIC BOOK", "SPECIALISTS"],
@@ -100,7 +100,7 @@ export const site = {
     /** Leave address empty ("") to hide it. */
     address: process.env.NEXT_PUBLIC_ADDRESS ?? "",
     deliver: "WE DELIVER WORLDWIDE !",
-    social: { facebook: "#", x: "#", instagram: "#" },
+    social: { tiktok: "https://www.tiktok.com/@ahlulilmbooks", instagram: "https://www.instagram.com/ahlulilmbooks" },
     /** e.g. { score: "4,8" } to show the green star rating row. Leave null unless it is a real rating you can show. */
     rating: null as null | { score: string },
     columns: [
