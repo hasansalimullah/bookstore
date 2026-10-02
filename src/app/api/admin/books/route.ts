@@ -5,6 +5,7 @@ import { extractSourceProductId, validateSourceUrl } from "@/lib/source-fetcher"
 import { SLUG_RE, slugify } from "@/lib/slug";
 import { parseMoneyToCents } from "@/lib/shop";
 import { readExtraImages, readTextFields } from "@/lib/book-fields";
+import { getAuthor } from "@/lib/authors";
 
 export const dynamic = "force-dynamic";
 
@@ -28,13 +29,19 @@ export async function POST(req: Request) {
   const slug = b.slug?.trim() ? b.slug.trim().toLowerCase() : slugify(b.title);
   if (!SLUG_RE.test(slug)) return Response.json({ error: "slug must be lowercase latin letters, digits and hyphens" }, { status: 400 });
 
+  let authorFields: { authorId?: number | null; author?: string } = {};
+  if (b.authorId !== undefined && String(b.authorId) !== "") {
+    const a = await getAuthor(Number(b.authorId));
+    if (!a) return Response.json({ error: "Author not found" }, { status: 400 });
+    authorFields = { authorId: a.id, author: a.name };
+  }
   const priceCents = b.price?.toString().trim() ? parseMoneyToCents(b.price) : null;
   if (b.price?.toString().trim() && priceCents === null) return Response.json({ error: "Invalid price (example: 12.50)" }, { status: 400 });
 
   let id: number;
   try {
     id = await createBook(
-      { title: b.title.trim(), ...readTextFields(b), extraImages: extra ?? [], priceCents, slug },
+      { title: b.title.trim(), ...readTextFields(b), ...authorFields, extraImages: extra ?? [], priceCents, slug },
       v.url.toString(),
       extractSourceProductId(v.url),
     );

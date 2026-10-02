@@ -1,9 +1,5 @@
 // ALL editable storefront content lives here (texts, links, sections). Plain data — safe to import anywhere.
 
-declare const process: {
-  env: Record<string, string | undefined>;
-};
-
 export interface HeroSlide {
   /** Full-bleed banner image (optional). If empty, a text slide is drawn from title/subtitle/text. */
   image: string | null;
@@ -84,7 +80,7 @@ export const site = {
     ],
     button: "CONTACT FORM",
     /** Set CONTACT_EMAIL in your environment (or edit here). */
-    email: process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "ahlulilmbooks@gmail.com",
+    email: process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "contact@example.com",
   },
 
   statsHeading: ["YOUR ARABIC ISLAMIC BOOK", "SPECIALISTS"],
@@ -104,7 +100,7 @@ export const site = {
     /** Leave address empty ("") to hide it. */
     address: process.env.NEXT_PUBLIC_ADDRESS ?? "",
     deliver: "WE DELIVER WORLDWIDE !",
-    social: { tiktok: "https://www.tiktok.com/@ahlulilmbooks", instagram: "https://www.instagram.com/ahlulilmbooks" },
+    social: { facebook: "#", x: "#", instagram: "#" },
     /** e.g. { score: "4,8" } to show the green star rating row. Leave null unless it is a real rating you can show. */
     rating: null as null | { score: string },
     columns: [

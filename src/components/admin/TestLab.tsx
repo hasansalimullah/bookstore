@@ -21,39 +21,40 @@ export default function TestLab() {
     fetch("/api/admin/test-parse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json());
 
   return (
-    <div className="space-y-8">
-      <p className="text-sm text-stone-600">
+    <div className="ad-wrap">
+      <p className="ad-pop" style={{ fontSize: 17, margin: "30px 0 20px" }}>
         Everything here runs through the real parser and decision logic but makes <b>no network requests</b> and writes nothing to the database.
       </p>
-      <div className="grid gap-4 md:grid-cols-2">
-        {SCENARIOS.map((s) => (
-          <div key={s.key} className="space-y-2 rounded-lg border border-stone-200 bg-white p-4">
-            <div className="flex items-center justify-between">
-              <b>{s.title}</b>
-              <button className="rounded bg-emerald-700 px-3 py-1 text-sm text-white" onClick={async () => setRes({ ...res, [s.key]: await run({ scenario: s.key }) })}>Run</button>
+      <div className="ad-soft">
+        <div className="ad-testgrid">
+          {SCENARIOS.map((s) => (
+            <div key={s.key} className="ad-testcard">
+              <div className="row">
+                <b>{s.title}</b>
+                <button className="ad-run" onClick={async () => setRes({ ...res, [s.key]: await run({ scenario: s.key }) })}>Run</button>
+              </div>
+              <p>{s.note}</p>
+              {res[s.key] && (
+                <div style={{ marginTop: 12 }}>
+                  <div dir="rtl" style={{ textAlign: "left", marginBottom: 8 }}><AvailabilityBadge value={res[s.key].availability} /></div>
+                  <DebugPanel d={res[s.key]} />
+                </div>
+              )}
             </div>
-            <p className="text-xs text-stone-500">{s.note}</p>
-            {res[s.key] && (
-              <>
-                <div dir="rtl"><AvailabilityBadge value={res[s.key].availability} /></div>
-                <DebugPanel d={res[s.key]} />
-              </>
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
+        <div className="ad-panel" style={{ marginTop: 20 }}>
+          <h2 className="ad-pop" style={{ fontSize: 19.5, fontWeight: 600, color: "#1f2937", margin: "0 0 12px" }}>Paste real HTML (e.g. “View source” from a product page)</h2>
+          <textarea dir="ltr" rows={8} value={html} onChange={(e) => setHtml(e.target.value)} className="ad-area" style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 13, height: 170, borderColor: "#d9d9d9", borderRadius: 4 }} />
+          <button className="ad-btn md" style={{ marginTop: 16, height: 48, width: 76, padding: 0 }} onClick={async () => setCustom(await run({ html }))}>Parse</button>
+          {custom && (
+            <div style={{ marginTop: 14 }}>
+              <div dir="rtl" style={{ textAlign: "left", marginBottom: 8 }}><AvailabilityBadge value={custom.availability} /></div>
+              <DebugPanel d={custom} />
+            </div>
+          )}
+        </div>
       </div>
-
-      <section className="space-y-2 rounded-lg border border-stone-200 bg-white p-4">
-        <h2 className="font-bold">Paste real HTML (e.g. “View source” from a product page)</h2>
-        <textarea dir="ltr" rows={8} value={html} onChange={(e) => setHtml(e.target.value)} className="w-full rounded border border-stone-300 p-2 font-mono text-xs" />
-        <button className="rounded bg-emerald-700 px-3 py-1.5 text-white" onClick={async () => setCustom(await run({ html }))}>Parse</button>
-        {custom && (
-          <>
-            <div dir="rtl"><AvailabilityBadge value={custom.availability} /></div>
-            <DebugPanel d={custom} />
-          </>
-        )}
-      </section>
     </div>
   );
 }

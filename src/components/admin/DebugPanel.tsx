@@ -1,25 +1,23 @@
 "use client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export default function DebugPanel({ d }: { d: any }) {
-  const rows: [string, string][] = [
-    ["HTTP Status", d.httpStatus ?? "—"],
-    ["Selector found", d.selectorFound ? "Yes" : "No"],
-    ["Detected text", d.detectedText ?? "—"],
-    ["Parsed status", d.parsedStatus],
-    ["Checked at", d.checkedAt ? new Date(d.checkedAt).toISOString().replace("T", " ").slice(0, 16) : "—"],
-  ].map(([k, v]) => [k as string, String(v)]);
-  const extra: [string, string][] = [];
-  if (d.reason) extra.push(["Reason", String(d.reason)]);
-  if (d.errorMessage) extra.push(["Error", String(d.errorMessage)]);
-  if (d.containerCount !== undefined) extra.push(["Containers matched", String(d.containerCount)]);
-  if (d.jsonLdAvailability) extra.push(["JSON-LD availability (cross-check)", String(d.jsonLdAvailability)]);
-  if (d.durationMs !== undefined) extra.push(["Duration", `${d.durationMs} ms`]);
-  if (d.simulated) extra.push(["Simulated", "yes (no real request was made)"]);
+export function debugLines(d: any): string[] {
+  const out: string[] = [
+    `HTTP Status: ${d.httpStatus ?? "—"}`,
+    `Selector found: ${d.selectorFound ? "Yes" : "No"}`,
+    `Detected text: ${d.detectedText ?? "—"}`,
+    `Parsed status: ${d.parsedStatus ?? "—"}`,
+    `Checked at: ${d.checkedAt ? new Date(d.checkedAt).toISOString().replace("T", " ").slice(0, 16) : "—"}`,
+  ];
+  if (d.durationMs !== undefined && d.durationMs !== null) out.push(`Duration: ${d.durationMs} ms`);
+  if (d.reason) out.push(`Reason: ${d.reason}`);
+  if (d.errorMessage) out.push(`Error: ${d.errorMessage}`);
+  if (d.containerCount !== undefined && d.containerCount !== null && d.containerCount !== 1) out.push(`Containers matched: ${d.containerCount}`);
+  if (d.jsonLdAvailability) out.push(`JSON-LD availability (cross-check): ${d.jsonLdAvailability}`);
+  if (d.simulated) out.push("Simulated: yes (no real request was made)");
+  return out;
+}
 
-  return (
-    <pre className="overflow-x-auto rounded-lg bg-stone-900 p-4 text-xs leading-6 text-emerald-200" dir="ltr">
-      {[...rows, ...extra].map(([k, v]) => `${k}: ${v}`).join("\n")}
-    </pre>
-  );
+export default function DebugPanel({ d, text }: { d?: any; text?: string }) {
+  return <div className="ad-debug" dir="ltr">{text ?? debugLines(d ?? {}).join("\n")}</div>;
 }

@@ -72,6 +72,14 @@ export async function applyImport(plan: PlannedRow[]): Promise<{ created: number
       );
     }
 
+    // Keep the Authors list in sync with the text column.
+    await client.query(
+      `INSERT INTO authors (name)
+         SELECT DISTINCT ON (lower(trim(author))) trim(author) FROM books WHERE author_id IS NULL AND author IS NOT NULL AND trim(author) <> ''
+         ON CONFLICT DO NOTHING`,
+    );
+    await client.query(`UPDATE books SET author_id = a.id FROM authors a WHERE books.author_id IS NULL AND books.author IS NOT NULL AND lower(trim(books.author)) = lower(a.name)`);
+
     await client.query("COMMIT");
     return { created: creates.length, updated: updates.length };
   } catch (e) {

@@ -14,11 +14,7 @@ export default function ImportTool() {
     setBusy(true);
     setError(null);
     setDone(null);
-    const res = await fetch("/api/admin/import", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ csv, sheetUrl, dryRun }),
-    });
+    const res = await fetch("/api/admin/import", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ csv, sheetUrl, dryRun }) });
     const data = await res.json().catch(() => ({}));
     setBusy(false);
     if (!res.ok) {
@@ -42,76 +38,69 @@ export default function ImportTool() {
     }
   }
 
-  const inp = "w-full rounded border border-stone-300 px-2 py-1.5";
   const importable = preview ? preview.counts.create + preview.counts.update : 0;
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-xl font-bold">Import books from a Google Sheet</h1>
+    <div className="ad-wrap">
+      <h1 className="ad-h1 plain" style={{ marginTop: 34 }}>Import books from a Google Sheet</h1>
 
-      <section className="space-y-2 rounded-lg border border-stone-200 bg-white p-4 text-sm">
-        <p className="font-medium">Your sheet needs these column headers in row 1 (any order; only the supplier URL and a title are required):</p>
-        <p className="rounded bg-stone-50 p-2 font-mono text-xs">Supplier product URL | Title | Title (Arabic) | Author | Slug | Price | Category | Image URL | Image URL 2 | Image URL 3 | Description | Edition | Cover | Print Quality | Format | Harakat</p>
-        <ul className="list-disc space-y-1 pl-5 text-stone-700">
+      <section className="ad-panel" style={{ marginTop: 22, fontSize: 14.5, lineHeight: "26px", boxShadow: "0 1px 4px rgba(0,0,0,.12)" }}>
+        <p>Your sheet needs these column headers in row 1 (any order; only the supplier URL and a title are required):</p>
+        <p style={{ background: "#f8f8f6", padding: "6px 10px", fontFamily: "ui-monospace, Menlo, monospace", fontSize: 13, margin: "6px 0 8px", overflowX: "auto" }}>
+          Supplier product URL | Title | Title (Arabic) | Author | Slug | Price | Category | Image URL | Image URL 2 | Image URL 3 | Description | Edition | Cover | Print Quality | Format | Harakat
+        </p>
+        <ul style={{ paddingLeft: 22, listStyle: "disc" }}>
           <li>Empty Slug = made automatically from the title. Empty Price = book can&apos;t be ordered until you add one.</li>
           <li>Importing the same sheet again is safe: rows with a supplier URL that already exists <b>update</b> that book (its page URL never changes).</li>
           <li>Empty cells on an update keep the existing value. Up to 500 rows at a time.</li>
-          <li>New books get their availability checked automatically within a few minutes.</li>
+          <li>New books get their availability checked automatically within a few minutes. Authors are added to the Authors list automatically.</li>
         </ul>
-        <a href="/api/admin/import/template" className="text-emerald-800 underline">Download a template CSV</a>
+        <a href="/api/admin/import/template" style={{ color: "#166a4c", textDecoration: "underline" }}>Download a template CSV</a>
       </section>
 
-      <section className="space-y-4 rounded-lg border border-stone-200 bg-white p-4">
-        <div>
-          <h2 className="mb-1 font-bold">Option 1 (recommended, most private): copy or upload</h2>
-          <p className="mb-2 text-xs text-stone-600">In Google Sheets select all cells (Ctrl+A), copy (Ctrl+C) and paste below — or File → Download → CSV and choose the file.</p>
-          <textarea dir="auto" rows={8} value={csv} onChange={(e) => { setCsv(e.target.value); setPreview(null); }} className={`${inp} font-mono text-xs`} placeholder="Paste here…" />
-          <input type="file" accept=".csv,text/csv,text/plain" onChange={onFile} className="mt-2 text-sm" />
-        </div>
-        <div>
-          <h2 className="mb-1 font-bold">Option 2: Google Sheets link</h2>
-          <p className="mb-2 text-xs text-amber-800">
-            The sheet must be shared as &quot;Anyone with the link → Viewer&quot;. Your sheet contains private supplier links, so turn sharing back off right after importing — or use option 1.
-          </p>
-          <input dir="ltr" value={sheetUrl} onChange={(e) => { setSheetUrl(e.target.value); setPreview(null); }} className={inp} placeholder="https://docs.google.com/spreadsheets/d/…/edit" />
-        </div>
-        <button onClick={() => run(true)} disabled={busy || (!csv.trim() && !sheetUrl.trim())} className="rounded bg-emerald-700 px-4 py-2 text-white disabled:opacity-50">
-          {busy ? "Working…" : "Preview import"}
+      <section className="ad-panel" style={{ marginTop: 22, boxShadow: "0 1px 4px rgba(0,0,0,.12)" }}>
+        <h2 className="ad-pop" style={{ fontSize: 18.5, fontWeight: 600, margin: 0, color: "#1f2937" }}>Option 1 (recommended, most private): copy or upload</h2>
+        <p style={{ fontSize: 13.5, color: "#666", margin: "4px 0 10px" }}>In Google Sheets select all cells (Ctrl+A), copy (Ctrl+C) and paste below — or File → Download → CSV and choose the file.</p>
+        <textarea dir="auto" className="ad-area" style={{ height: 170, fontFamily: "ui-monospace, Menlo, monospace", fontSize: 13, borderColor: "#d9d9d9" }} value={csv} onChange={(e) => { setCsv(e.target.value); setPreview(null); }} placeholder="Paste here…" />
+        <input type="file" accept=".csv,text/csv,text/plain" onChange={onFile} style={{ marginTop: 14, fontSize: 14 }} />
+
+        <h2 className="ad-pop" style={{ fontSize: 18.5, fontWeight: 600, margin: "26px 0 0", color: "#1f2937" }}>Option 2: Google Sheets link</h2>
+        <p style={{ fontSize: 13.5, color: "#b4400a", margin: "4px 0 8px" }}>The sheet must be shared as &quot;Anyone with the link → Viewer&quot;. Your sheet contains private supplier links, so turn sharing back off right after importing — or use option 1.</p>
+        <input dir="ltr" className="ad-input" style={{ borderColor: "#d9d9d9", borderRadius: 6, height: 44 }} value={sheetUrl} onChange={(e) => { setSheetUrl(e.target.value); setPreview(null); }} placeholder="https://docs.google.com/spreadsheets/d/…/edit" />
+        <button className="ad-btn md" style={{ marginTop: 18, height: 44, fontSize: 15 }} onClick={() => run(true)} disabled={busy || (!csv.trim() && !sheetUrl.trim())}>
+          {busy ? "Working…" : "Preview Import"}
         </button>
       </section>
 
-      {error && <p className="rounded bg-red-50 p-3 text-sm text-red-800">{error}</p>}
-
+      {error && <p className="ad-banner err" style={{ width: "auto", margin: "16px 0 0" }}>{error}</p>}
       {done && (
-        <p className="rounded bg-emerald-50 p-3 text-sm text-emerald-900">
-          ✓ Imported: {done.created} new, {done.updated} updated. Availability will fill in automatically within a few minutes.{" "}
-          <a href="/admin" className="underline">Go to books</a>
+        <p className="ad-banner info" style={{ width: "auto", margin: "16px 0 0", background: "#eaf5ea", borderColor: "#9fcf9f", color: "#1b4d1b" }}>
+          ✓ Imported: {done.created} new, {done.updated} updated. Availability will fill in automatically within a few minutes. <a href="/admin" style={{ textDecoration: "underline" }}>Go to books</a>
         </p>
       )}
-
       {preview && (
-        <section className="space-y-3">
-          <p className="text-sm">
-            <b className="text-emerald-800">{preview.counts.create} new</b> · <b className="text-blue-800">{preview.counts.update} updates</b> · <b className="text-red-700">{preview.counts.error} errors</b>
+        <section style={{ marginTop: 22 }}>
+          <p style={{ fontSize: 14.5 }}>
+            <b style={{ color: "#166a4c" }}>{preview.counts.create} new</b> · <b style={{ color: "#1d4ed8" }}>{preview.counts.update} updates</b> · <b style={{ color: "#b3261e" }}>{preview.counts.error} errors</b>
             {preview.counts.error > 0 && " (rows with errors are skipped)"}
           </p>
-          <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
-            <table className="w-full text-xs">
-              <thead className="bg-stone-100 text-left"><tr><th className="p-2">Row</th><th className="p-2">Action</th><th className="p-2">Title</th><th className="p-2">Slug</th><th className="p-2">Notes</th></tr></thead>
+          <div className="ad-box" style={{ marginTop: 8, overflowX: "auto" }}>
+            <table className="ad-otable" style={{ fontSize: 13.5 }}>
+              <thead><tr><th>Row</th><th>Action</th><th>Title</th><th>Slug</th><th>Notes</th></tr></thead>
               <tbody>
                 {preview.rows.map((r: any) => (
-                  <tr key={r.row} className="border-t border-stone-100 align-top">
-                    <td className="p-2">{r.row}</td>
-                    <td className={`p-2 font-medium ${r.action === "create" ? "text-emerald-800" : r.action === "update" ? "text-blue-800" : "text-red-700"}`}>{r.action}</td>
-                    <td className="p-2" dir="auto">{r.title}</td>
-                    <td className="p-2">{r.slug ?? "—"}</td>
-                    <td className="p-2">{r.error ? <span className="text-red-700">{r.error}</span> : r.warnings.join(" · ")}</td>
+                  <tr key={r.row}>
+                    <td>{r.row}</td>
+                    <td style={{ fontWeight: 600, color: r.action === "create" ? "#166a4c" : r.action === "update" ? "#1d4ed8" : "#b3261e" }}>{r.action}</td>
+                    <td dir="auto">{r.title}</td>
+                    <td>{r.slug ?? "—"}</td>
+                    <td>{r.error ? <span style={{ color: "#b3261e" }}>{r.error}</span> : r.warnings.join(" · ")}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <button onClick={() => run(false)} disabled={busy || importable === 0} className="rounded bg-emerald-700 px-4 py-2 text-white disabled:opacity-50">
+          <button className="ad-btn md" style={{ marginTop: 16, height: 44, fontSize: 15 }} onClick={() => run(false)} disabled={busy || importable === 0}>
             {busy ? "Importing…" : `Import ${importable} book${importable === 1 ? "" : "s"}`}
           </button>
         </section>

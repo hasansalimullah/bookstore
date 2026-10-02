@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { site } from "@/content/site";
-import { InstagramIcon, MailIcon, PinIcon, TikTokIcon } from "./icons";
+import { FacebookIcon, InstagramIcon, MailIcon, PinIcon, XIcon } from "./icons";
 
 export default function Footer() {
   const f = site.footer;
@@ -16,8 +16,9 @@ export default function Footer() {
           </div>
           <p className="deliver">{f.deliver}</p>
           <div className="social">
-            {f.social.tiktok && <a href={f.social.tiktok} aria-label="TikTok"><TikTokIcon /></a>}
-            {f.social.instagram && <a href={f.social.instagram} aria-label="Instagram"><InstagramIcon /></a>}
+            <a href={f.social.facebook} aria-label="Facebook"><FacebookIcon /></a>
+            <a href={f.social.x} aria-label="X"><XIcon /></a>
+            <a href={f.social.instagram} aria-label="Instagram"><InstagramIcon /></a>
           </div>
           {f.rating && <div className="rating"><i /> {f.rating.score}</div>}
         </div>

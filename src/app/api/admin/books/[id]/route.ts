@@ -4,6 +4,7 @@ import { extractSourceProductId, validateSourceUrl } from "@/lib/source-fetcher"
 import { SLUG_RE } from "@/lib/slug";
 import { parseMoneyToCents } from "@/lib/shop";
 import { readExtraImages, readTextFields } from "@/lib/book-fields";
+import { getAuthor } from "@/lib/authors";
 
 export const dynamic = "force-dynamic";
 type Ctx = { params: Promise<{ id: string }> };
@@ -31,6 +32,16 @@ export async function PATCH(req: Request, ctx: Ctx) {
   const patch: Parameters<typeof updateBook>[1] = {};
   if (typeof b.title === "string" && b.title.trim()) patch.title = b.title.trim();
   Object.assign(patch, readTextFields(b));
+  if (b.authorId !== undefined) {
+    if (b.authorId === null || String(b.authorId) === "") {
+      patch.authorId = null;
+    } else {
+      const a = await getAuthor(Number(b.authorId));
+      if (!a) return Response.json({ error: "Author not found" }, { status: 400 });
+      patch.authorId = a.id;
+      patch.author = a.name;
+    }
+  }
   const extra = readExtraImages(b.extraImages);
   if (extra === null) return Response.json({ error: "Extra image URLs must start with https://" }, { status: 400 });
   if (extra !== undefined) patch.extraImages = extra;

@@ -11,32 +11,23 @@ export default function AdminLogin() {
   async function submit() {
     setBusy(true);
     setError(null);
-    const res = await fetch("/api/admin/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
-    });
+    const res = await fetch("/api/admin/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password }) });
     setBusy(false);
     if (res.ok) router.replace("/admin");
     else setError(((await res.json().catch(() => ({}))) as { error?: string }).error ?? "error");
   }
 
   return (
-    <div className="mx-auto mt-16 max-w-sm space-y-4 rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
-      <h1 className="text-xl font-bold">تسجيل دخول المدير</h1>
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && submit()}
-        placeholder="كلمة المرور"
-        className="w-full rounded-lg border border-stone-300 px-3 py-2"
-        autoFocus
-      />
-      {error && <p className="text-sm text-red-700">{error}</p>}
-      <button onClick={submit} disabled={busy || !password} className="w-full rounded-lg bg-emerald-700 py-2 text-white disabled:opacity-50">
-        دخول
-      </button>
+    <div className="ad-main">
+      <div className="ad-card" style={{ maxWidth: 420, margin: "70px auto 0", width: "calc(100% - 32px)" }}>
+        <h2 style={{ fontSize: 18, margin: "6px 0 14px" }}>Admin login</h2>
+        <div className="ad-field">
+          <label className="ad-label">Password</label>
+          <input type="password" className="ad-input" value={password} autoFocus onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()} />
+        </div>
+        {error && <p style={{ color: "#b3261e", fontSize: 14, marginBottom: 12 }}>{error}</p>}
+        <button className="ad-btn md" style={{ width: "100%" }} onClick={submit} disabled={busy || !password}>Log in</button>
+      </div>
     </div>
   );
 }

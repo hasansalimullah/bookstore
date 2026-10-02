@@ -112,6 +112,7 @@ export interface AdminBook extends PublicBook {
   nextCheckAt: string | null;
   storedAvailability: Availability;
   extraImages: string[];
+  authorId: number | null;
 }
 
 const ADMIN_SELECT = `
@@ -125,6 +126,7 @@ function toAdmin(r: any): AdminBook {
     storedAvailability: r.availability,
     published: r.published,
     extraImages: Array.isArray(r.extra_images) ? r.extra_images : [],
+    authorId: r.author_id === null || r.author_id === undefined ? null : Number(r.author_id),
     sourceUrl: r.source_url_private ?? "",
     sourceProductId: r.source_product_id,
     monitoringEnabled: !!r.monitoring_enabled,
@@ -137,6 +139,15 @@ function toAdmin(r: any): AdminBook {
 
 export async function listAdminBooks(): Promise<AdminBook[]> {
   const { rows } = await query(`${ADMIN_SELECT} ORDER BY b.created_at DESC`);
+  return rows.map(toAdmin);
+}
+
+/** authorId = number → that author's books; "none" → books without an author. */
+export async function listAdminBooksByAuthor(authorId: number | "none"): Promise<AdminBook[]> {
+  const { rows } =
+    authorId === "none"
+      ? await query(`${ADMIN_SELECT} WHERE b.author_id IS NULL ORDER BY b.created_at DESC`)
+      : await query(`${ADMIN_SELECT} WHERE b.author_id = $1 ORDER BY b.created_at DESC`, [authorId]);
   return rows.map(toAdmin);
 }
 
@@ -159,6 +170,7 @@ export interface BookInput {
   imageUrl?: string | null;
   extraImages?: string[];
   priceCents?: number | null;
+  authorId?: number | null;
   slug: string;
   published?: boolean;
 }
@@ -166,7 +178,7 @@ export interface BookInput {
 const COLUMN_OF: Record<string, string> = {
   title: "title", titleAr: "title_ar", author: "author", description: "description", category: "category",
   edition: "edition", cover: "cover", printQuality: "print_quality", format: "format", harakat: "harakat",
-  imageUrl: "image_url", extraImages: "extra_images", priceCents: "price_cents", slug: "slug", published: "published",
+  imageUrl: "image_url", extraImages: "extra_images", priceCents: "price_cents", authorId: "author_id", slug: "slug", published: "published",
 };
 
 export async function createBook(input: BookInput, sourceUrl: string, sourceProductId: string | null): Promise<number> {

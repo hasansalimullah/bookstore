@@ -8,7 +8,7 @@ const SITE = process.env.NEXT_PUBLIC_SITE_NAME ?? "Ahlul Ilm Books";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"], variable: "--font-poppins", display: "swap" });
 const arabic = Noto_Sans_Arabic({ subsets: ["arabic"], weight: ["400", "500", "600"], variable: "--font-arabic", display: "swap" });
-const inter = Inter({ subsets: ["latin"], weight: ["300", "400"], variable: "--font-inter", display: "swap" });
+const inter = Inter({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"], variable: "--font-inter", display: "swap" });
 const oswald = Oswald({ subsets: ["latin"], weight: ["300", "400", "500"], style: ["normal"], variable: "--font-oswald", display: "swap" });
 
 export const metadata: Metadata = {

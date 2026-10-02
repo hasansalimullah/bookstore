@@ -221,3 +221,10 @@ The home page and product page follow the Canva mockups (1366px desktop; a simpl
 * **Carousels** show books whose Category contains the section's `category` word (e.g. "Tafsir"); until you have such books they show the newest books.
 * **Newsletter:** emails are saved in the database (Admin → Subscribers (CSV)). No email is sent automatically.
 * Wishlist (heart) is saved in the visitor's browser only; Account/Login/Registration pages are placeholders ("coming soon").
+
+## Admin panel design
+
+* Styles: `src/app/admin.css` (same palette as the storefront). Shell (header + nav pill + footer): `src/app/admin/layout.tsx`, `src/components/admin/AdminNav.tsx`.
+* **Books** tab = Add Book form + **Authors** grid. Click an author to see their books (Check Now / Test Connection / Delete per book, plus Check All / Test All). Books without an author appear under "No author".
+* Authors are created from the "+" button, from the Author dropdown ("+ New author…"), or automatically from the Author column when you import a sheet. Rename/Delete author live on the author page.
+* The Add/Edit form shows the fields from your design; the extra product-page fields (second title, category, edition, cover, print quality, format, harakat, extra images) are inside "More details".
