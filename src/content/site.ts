@@ -1,4 +1,19 @@
 // ALL editable storefront content lives here (texts, links, sections). Plain data — safe to import anywhere.
+export interface NavLink {
+  label: string;
+  href: string;
+}
+export interface NavMenu {
+  columns: { title: string; links: NavLink[] }[];
+  /** Category keyword for the 4 featured books in the dropdown. "" = newest books. */
+  featured?: string;
+}
+export interface NavItem {
+  label: string;
+  href: string;
+  active?: boolean;
+  menu?: NavMenu;
+}
 
 export interface HeroSlide {
   /** Full-bleed banner image (optional). If empty, a text slide is drawn from title/subtitle/text. */
@@ -14,19 +29,90 @@ export interface HeroSlide {
 export const site = {
   name: process.env.NEXT_PUBLIC_SITE_NAME ?? "Ahlul Ilm Books",
   country: "United States",
-  announcements: ["WORLDWIDE SHIPPING WITH USPS"],
+    announcements: ["WORLDWIDE SHIPPING WITH USPS", "FAST PROCESSING GUARANTEED"],
   language: "ENGLISH",
   currencyLabel: "$ USD",
 
+    /** Top menu. Items with `menu` open a dropdown. Edit labels and links freely. */
   nav: [
-    { label: "NEW RELEASES", href: "/shop?sort=new", active: true },
-    { label: "AUTHORS", href: "/shop" },
-    { label: "ARABIC", href: "/shop?category=Arabic" },
-    { label: "QURAN & TAFSIR", href: "/shop?category=Quran|Tafsir" },
-    { label: "AQEEDA", href: "/shop?category=Aqeeda" },
-    { label: "FIQH", href: "/shop?category=Fiqh" },
-    { label: "HADEETH", href: "/shop?category=Hadeeth|Hadith" },
-  ],
+    {
+      label: "NEW RELEASES",
+      href: "/shop?sort=new",
+      active: true,
+      menu: {
+        columns: [{ title: "Browse", links: [{ label: "New releases", href: "/shop?sort=new" }, { label: "All books", href: "/shop" }] }],
+        featured: "",
+      },
+    },
+    {
+      label: "AUTHORS",
+      href: "/shop",
+      menu: {
+        columns: [
+          {
+            title: "Top authors",
+            links: [
+              { label: "Ibn Taymiyyah", href: "/shop?q=Taymiyyah" },
+              { label: "Ibn al-Qayyim", href: "/shop?q=Qayyim" },
+              { label: "Ibn al-Jawzi", href: "/shop?q=Jawzi" },
+              { label: "Al-Uthaymin", href: "/shop?q=Uthaymin" },
+              { label: "Ibn Baz", href: "/shop?q=Baz" },
+            ],
+          },
+        ],
+        featured: "",
+      },
+    },
+    {
+      label: "ARABIC",
+      href: "/shop?category=Arabic",
+      menu: {
+        columns: [
+          { title: "Learn Arabic", links: [{ label: "Grammar (Nahw)", href: "/shop?q=Nahw" }, { label: "Morphology (Sarf)", href: "/shop?q=Sarf" }, { label: "Dictionaries", href: "/shop?q=Dictionary" }] },
+          { title: "Literature", links: [{ label: "Poetry (Diwan)", href: "/shop?q=Diwan" }, { label: "Rhetoric (Balaghah)", href: "/shop?q=Balaghah" }] },
+        ],
+        featured: "Arabic",
+      },
+    },
+    {
+      label: "QURAN & TAFSIR",
+      href: "/shop?category=Quran|Tafsir",
+      menu: {
+        columns: [
+          { title: "Tafsir", links: [{ label: "Complete tafsir", href: "/shop?q=Tafsir" }, { label: "Quranic sciences", href: "/shop?q=Quranic" }] },
+          { title: "Quran", links: [{ label: "Mushaf", href: "/shop?q=Mushaf" }, { label: "Tajwid & recitation", href: "/shop?q=Tajwid" }] },
+        ],
+        featured: "Tafsir",
+      },
+    },
+    {
+      label: "AQEEDA",
+      href: "/shop?category=Aqeeda",
+      menu: {
+        columns: [{ title: "Aqidah", links: [{ label: "Tawhid", href: "/shop?q=Tawhid" }, { label: "Names & attributes", href: "/shop?q=Sifat" }, { label: "Explanations of texts", href: "/shop?q=Sharh" }] }],
+        featured: "Aqeeda",
+      },
+    },
+    {
+      label: "FIQH",
+      href: "/shop?category=Fiqh",
+      menu: {
+        columns: [
+          { title: "Schools", links: [{ label: "Hanafi", href: "/shop?q=Hanafi" }, { label: "Maliki", href: "/shop?q=Maliki" }, { label: "Shafi'i", href: "/shop?q=Shafi" }, { label: "Hanbali", href: "/shop?q=Hanbali" }] },
+          { title: "Topics", links: [{ label: "Usul al-Fiqh", href: "/shop?q=Usul" }, { label: "Fatawa", href: "/shop?q=Fatawa" }] },
+        ],
+        featured: "Fiqh",
+      },
+    },
+    {
+      label: "HADEETH",
+      href: "/shop?category=Hadeeth|Hadith",
+      menu: {
+        columns: [{ title: "Hadith", links: [{ label: "Collections", href: "/shop?q=Sahih" }, { label: "Explanations (Sharh)", href: "/shop?q=Sharh" }, { label: "Hadith sciences", href: "/shop?q=Mustalah" }] }],
+        featured: "Hadeeth|Hadith",
+      },
+    },
+  ] as NavItem[],
 
   hero: [
     {
