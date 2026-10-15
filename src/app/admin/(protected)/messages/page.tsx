@@ -1,5 +1,5 @@
 import { query } from "@/lib/db";
-import MessageList from "@/components/admin/MessageList";
+import MessageList from "@/components/admin/MessageList.tsx";
 
 export const dynamic = "force-dynamic";
 

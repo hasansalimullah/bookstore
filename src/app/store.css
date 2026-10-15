@@ -317,8 +317,8 @@
 .sf-stats-h, .sf-stats { position: relative; z-index: 1; }
 .sf-stats-sec .sf-stats { margin-top: 62px; }
 .sf-promo h3, .sf-promo p { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
-.sf-promo h3 { -webkit-line-clamp: 2; }
-.sf-promo p { -webkit-line-clamp: 4; }
+.sf-promo h3 { -webkit-line-clamp: 2; line-clamp: 2; }
+.sf-promo p { -webkit-line-clamp: 4; line-clamp: 4; }
 .sf-promo .pic.cover { background: linear-gradient(90deg, #ccb38b 0%, #e7e1d6 38%, #ecebe8 100%); display: flex; align-items: center; justify-content: center; }
 .sf-promo .pic.cover img { width: auto; height: auto; max-height: 190px; max-width: 135px; object-fit: contain; filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, .28)); }
 .sf-footer .contact span { font-size: 13px; color: #555; }
