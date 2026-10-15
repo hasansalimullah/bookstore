@@ -1,4 +1,10 @@
 // ALL editable storefront content lives here (texts, links, sections). Plain data — safe to import anywhere.
+export interface SectionDef {
+  title: string;
+  category?: string;
+  q?: string;
+  kind?: "newest" | "random";
+}
 export interface NavLink {
   label: string;
   href: string;
@@ -114,22 +120,41 @@ export const site = {
     },
   ] as NavItem[],
 
+    /** Home banners (the text is already inside the images). Add or remove slides freely. */
   hero: [
-    {
-      image: "/assets/hero-1.jpg",
-      title: "Kitab al-'Adhamah",
-      subtitle: "al-Asbahani (369H)",
-      text: "A 4th-century Aqidah classic on Allah's Lordship, Names and Attributes, finely authenticated.",
-      href: "/shop?q=Adhamah",
-      bookImage: null,
-    },
+    { image: "/assets/hero-1.png", title: "Majmu' Fatawa Shaykh al-Islam Ibn Taymiyyah 1-37 Volume", subtitle: "", text: "", href: "/shop?q=Majmu", bookImage: null },
+    { image: "/assets/hero-2.png", title: "Takhrij Majmu' Fatawa Shaykh al-Islam Ibn Taymiyyah 1-6 volume", subtitle: "", text: "", href: "/shop?q=Takhrij", bookImage: null },
+    { image: "/assets/hero-3.png", title: "Majmu' Fatawa Shaykh al-Islam Ibn Taymiyyah 1-37 Volume", subtitle: "", text: "", href: "/shop?q=Majmu", bookImage: null },
+    { image: "/assets/hero-4.png", title: "Shaykh al-Islam Ibn Taymiyyah is now out!", subtitle: "", text: "", href: "/shop?q=Taymiyyah", bookImage: null },
   ] as HeroSlide[],
 
   /** Book carousels. `category` matches books whose Category contains it. Falls back to newest books if nothing matches. */
-  sections: [
-    { title: "SPECIALIZED TAFSIRS: FIQH, LANGUAGE, TADABBUR", category: "Tafsir", limit: 10 },
-    { title: "USUL AL-FIQH FOR EVERY LEVEL", category: "Usul", limit: 10 },
-  ],
+    /** How often things change. */
+  rotation: {
+    sectionsHours: 24, // the two book carousels swap topics (use 30 if you prefer)
+    promosHours: 12, // the two DISCOVER boxes show different books
+  },
+
+  /**
+   * Pool of carousel topics. Each day the site picks two that have at least 3 books.
+   *  - category: books whose Category contains this word ("a|b" = either)
+   *  - q: books whose title/author contains this word
+   *  - kind: "newest" or "random"
+   * For a discount row: add the word Discount to those books' Category.
+   */
+  sectionPool: [
+    { title: "SPECIALIZED TAFSIRS: FIQH, LANGUAGE, TADABBUR", category: "Tafsir" },
+    { title: "USUL AL-FIQH FOR EVERY LEVEL", category: "Usul" },
+    { title: "FIQH CORNERSTONES FROM EVERY MADHHAB", category: "Fiqh" },
+    { title: "IBN TAYMIYYAH BOOKS", q: "Taymiyyah" },
+    { title: "IBN AL-QAYYIM BOOKS", q: "Qayyim" },
+    { title: "AQEEDAH ESSENTIALS", category: "Aqeeda|Aqidah" },
+    { title: "HADITH COLLECTIONS & EXPLANATIONS", category: "Hadeeth|Hadith" },
+    { title: "LEARN ARABIC", category: "Arabic" },
+    { title: "DISCOUNT BOOKS", category: "Discount" },
+    { title: "NEW ARRIVALS", kind: "newest" },
+    { title: "WORTH A LOOK TODAY", kind: "random" },
+  ] as SectionDef[],
 
   promos: [
     {
@@ -186,14 +211,14 @@ export const site = {
     /** Leave address empty ("") to hide it. */
     address: process.env.NEXT_PUBLIC_ADDRESS ?? "",
     deliver: "WE DELIVER WORLDWIDE !",
-    social: { facebook: "#", x: "#", instagram: "#" },
+    social: { instagram: "https://www.instagram.com/", tiktok: "https://www.tiktok.com/" } as Record<string, string>,
     /** e.g. { score: "4,8" } to show the green star rating row. Leave null unless it is a real rating you can show. */
-    rating: null as null | { score: string },
+    rating: { score: "4,8" } as null | { score: string },
     columns: [
       {
         title: "CUSTOMER SUPPORT",
         links: [
-          { label: "Contact us", href: "/p/contact-us" },
+          { label: "Contact us", href: "/contact" },
           { label: "Shipping information", href: "/p/shipping-information" },
           { label: "Returns & refunds", href: "/p/returns-and-refunds" },
           { label: "FAQ", href: "/p/faq" },
