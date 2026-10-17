@@ -1,5 +1,6 @@
 "use client";
 
+// Shows a visible message (instead of a blank page) when a page crashes while rendering.
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", padding: "80px 24px", textAlign: "center" }}>

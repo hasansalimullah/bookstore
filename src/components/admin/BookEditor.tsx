@@ -78,7 +78,7 @@ export default function BookEditor({ initial, authors: initialAuthors }: { initi
       <p className="ad-crumb">
         {b.authorId ? <Link href={`/admin/authors/${b.authorId}`}>Author</Link> : <Link href="/admin">Author</Link>} / Book / Title
       </p>
-      <h1 className="ad-h1 ar" dir="ltr" style={{ marginTop: 22 }}>{b.title}</h1>
+      <h1 className="ad-h1 ar" dir="auto" style={{ marginTop: 22 }}>{b.title}</h1>
       <p className="ad-sub">/books/{b.slug}{authorName ? <span style={{ color: "#999" }}> · {authorName}</span> : null}</p>
 
       <section className="ad-card white ad-status" style={{ marginTop: 16 }}>

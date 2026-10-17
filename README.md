@@ -106,64 +106,22 @@ parse details · monitoring on/off per book · publish/unpublish.
 * Plan: keep the HTML checker as the default; ask them for API access. The fetch → evaluate split (`source-fetcher.ts` / `evaluate.ts`) is where a Salla adapter would plug in (Salla API → private backend → DB → your site; tokens in env/DB, never sent to the browser). I have **not** built the Salla adapter since there are no credentials yet.
 * Regardless of approach: check their `robots.txt` and terms of use, keep the request rate low (defaults are conservative), and set `USER_AGENT` to something with a contact email. A short message asking for permission is the safest route.
 
-## Bulk import from a Google Sheet / CSV
+## Deploying
 
-Admin → **Import**. Row 1 headers: `Supplier product URL | Title | Author | Slug | Price | Image URL | Description`
-(only the first two are required; order doesn't matter). Paste the cells (copied from Google Sheets), upload a CSV, or give a
-Sheets link (the sheet must be shared "Anyone with the link → Viewer" — it holds private supplier URLs, so prefer copy/upload, or turn sharing off afterwards).
-
-* **Preview first**: shows create / update / error per row before anything is saved. Rows with errors are skipped.
-* Empty Slug → auto-made from the title (Arabic is transliterated), with `-2`, `-3` if taken. Explicit slugs that clash are errors.
-* Re-importing is safe: a row whose supplier URL already exists **updates** that book (existing slugs never change; empty cells keep current values).
-* Max 500 rows per import; everything is saved in one transaction. New books are picked up by the scheduler within minutes.
-
-## Shop (cart → checkout → orders)
-
-* Customers: browse → **Add to cart** (only when 🟢 in stock and a price is set) → `/cart` → `/checkout` (shipping details) → pay → `/order/<unguessable id>`.
-* The server decides prices and availability at checkout; nothing from the browser is trusted. Flat worldwide shipping: `SHIPPING_FLAT_CENTS`.
-* `PAYMENT_MODE=manual` (default in `.env.example`): checkout just creates the order — use this to test the flow with no Stripe account.
-* `PAYMENT_MODE=stripe`: redirects to Stripe Checkout. Set `STRIPE_SECRET_KEY`, create a webhook in Stripe pointing to
-  `https://YOURSITE/api/stripe/webhook` (events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
-  `checkout.session.expired`, `checkout.session.async_payment_failed`) and put its signing secret in `STRIPE_WEBHOOK_SECRET`.
-  Only the signature-verified webhook marks an order **paid** (and only if the amount matches).
-* Admin → **Orders**: customer + address, items, the private supplier link (admin only) and current stock for each item, status
-  (`pending_payment → paid → ordered_from_supplier → shipped`), tracking info (shown to the customer), internal notes.
-* Orders and addresses are only reachable through admin routes. The customer order page shows items, totals and status only.
-* Not included yet: emails (Resend), refunds through Stripe (do those in the Stripe dashboard and set the order to `refunded`), taxes, per-country shipping rates, customer accounts.
-
-## Deploying on Cloudflare (Workers)
-
-Uses the OpenNext adapter (`@opennextjs/cloudflare`), which runs the Next.js app as a Worker. Already configured: `wrangler.jsonc`,
-`open-next.config.ts`, and a database layer that opens a short-lived connection per query when running on Workers.
-
+**Option A — one small VPS (simplest, recommended):** Node 22 + managed or local PostgreSQL.
 ```bash
-npm install
-npx wrangler login
-npm run cf:deploy          # builds + uploads; prints https://bookstore.<you>.workers.dev
+npm ci && npm run migrate && npm run build
+# two long-running processes (systemd or pm2):
+npm start                 # web (behind Caddy/nginx with HTTPS)
+npm run worker            # scheduler
 ```
+Set `NODE_ENV=production`, real `DATABASE_URL`, strong `ADMIN_PASSWORD`/`SESSION_SECRET`, `SOURCE_MODE=live`, `USER_AGENT`.
+Cookies are `Secure` in production, so serve over HTTPS.
 
-Then in the Cloudflare dashboard → Workers & Pages → **bookstore** → Settings → Variables and Secrets, add these as **Secret** type
-(secrets survive redeploys): `DATABASE_URL`, `ADMIN_PASSWORD`, `SESSION_SECRET`, `SOURCE_MODE` (= `live`), `CRON_SECRET`, `USER_AGENT`,
-`CHECK_INTERVAL_MINUTES`, `PAYMENT_MODE`, `SHIPPING_FLAT_CENTS`, and for Stripe `SITE_URL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
-Run `npm run migrate` from your computer (with `DATABASE_URL` in your local `.env`) whenever a new migration file is added.
-
-**Scheduler:** Workers can't run `npm run worker`, so `cron-worker/` is a tiny second Worker with a Cron Trigger (every minute, Cloudflare's minimum) that calls
-`/api/cron/check` through a service binding:
-
-```bash
-cd cron-worker
-npx wrangler deploy
-npx wrangler secret put CRON_SECRET     # paste the SAME value you used for the shop
-```
-
-If the service-binding call ever fails, use any external scheduler instead (e.g. cron-job.org): GET `https://YOURSITE/api/cron/check`
-with header `Authorization: Bearer <CRON_SECRET>`.
-
-Notes: Workers Free has a 3 MiB compressed size limit for the Worker — if the deploy reports the script is too large you need the
-Workers Paid plan. Connections to Postgres are opened per query on Workers; Cloudflare Hyperdrive would speed that up later.
-Cookies are `Secure`, so use the HTTPS URL. Custom domain: Workers → Settings → Domains & Routes.
-
-Other hosts (VPS / Vercel) still work: `npm run build && npm start` + `npm run worker` on a VPS; on Vercel use `/api/cron/check` with an external scheduler.
+**Option B — Vercel + hosted Postgres (Neon/Supabase):** serverless has no long-running worker, so set `CRON_SECRET`
+(16+ chars) and call `GET /api/cron/check` every 5 minutes with `Authorization: Bearer <CRON_SECRET>`
+(Vercel Cron does this automatically when `CRON_SECRET` is set; add a `crons` entry in `vercel.json`). The route
+processes one batch (`CHECK_BATCH_SIZE`) per call. Note the in-memory per-host delay and login throttle are per-instance on serverless.
 
 ## Scaling from 5 → thousands of books
 
@@ -202,29 +160,3 @@ src/app/api/…                  public API, admin API, cron endpoint
 src/app/(public pages), admin/ storefront + dashboard + test lab
 tests/                         node:test suites
 ```
-
-## Freshness rules (why customers rarely see "Checking availability…")
-
-* A failed check never overwrites the last known status. The public site keeps showing it for up to `STALE_AFTER_MINUTES` (default 360); after that it shows "Checking availability…" and the book can't be added to the cart.
-* At checkout, any item the scheduler hasn't checked in the last 2 minutes is re-checked live (max 5). A confirmed out-of-stock blocks the order; an inconclusive check falls back to the last known status.
-* Admin shows a red banner if no scheduled check has run recently (usually: the cron-worker isn't deployed).
-* `CHECK_INTERVAL_MINUTES=1` + the every-minute cron = each book is checked about once a minute. Checking 500+ books that often is not possible politely (see "Scaling").
-
-## Storefront design
-
-The home page and product page follow the Canva mockups (1366px desktop; a simple responsive fallback below 1100px).
-
-* **Styles:** `src/app/store.css` (design tokens at the top: tan `#ccb38b`, dark `#4b4234`, brown `#846a40`, gold `#bc9353`). Fonts: Poppins, Oswald, Inter, Noto Sans Arabic via `next/font`.
-* **Content you edit:** `src/content/site.ts` — announcement bar, nav links, hero slides, carousel sections (title + category), promo cards, link buttons, contact block, stats, newsletter, footer text/links.
-* **Images:** `public/assets/` (logo, pattern, stat icons, hero banner, promo images). These were cut out of the mockup PNGs at 1x — replace with the original/high-resolution files (same filenames) for crisp results on retina screens.
-* **Per-book fields** (admin + import): Title, Title (Arabic), Author, Category (`Fiqh & Ahkam > Fiqh Hanbali > Usul Madhhab` → breadcrumb), Price, main image + up to 2 extra images (thumbnails), Description, Edition, Cover, Print Quality, Format, Harakat.
-* **Carousels** show books whose Category contains the section's `category` word (e.g. "Tafsir"); until you have such books they show the newest books.
-* **Newsletter:** emails are saved in the database (Admin → Subscribers (CSV)). No email is sent automatically.
-* Wishlist (heart) is saved in the visitor's browser only; Account/Login/Registration pages are placeholders ("coming soon").
-
-## Admin panel design
-
-* Styles: `src/app/admin.css` (same palette as the storefront). Shell (header + nav pill + footer): `src/app/admin/layout.tsx`, `src/components/admin/AdminNav.tsx`.
-* **Books** tab = Add Book form + **Authors** grid. Click an author to see their books (Check Now / Test Connection / Delete per book, plus Check All / Test All). Books without an author appear under "No author".
-* Authors are created from the "+" button, from the Author dropdown ("+ New author…"), or automatically from the Author column when you import a sheet. Rename/Delete author live on the author page.
-* The Add/Edit form shows the fields from your design; the extra product-page fields (second title, category, edition, cover, print quality, format, harakat, extra images) are inside "More details".

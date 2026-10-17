@@ -1,13 +1,6 @@
 import Link from "next/link";
 import { site } from "@/content/site";
-import { InstagramIcon, FacebookIcon, XIcon, TikTokIcon, MailIcon, PinIcon, StarsRow } from "./icons";
-
-const SOCIAL: { key: string; label: string; Icon: () => React.ReactNode }[] = [
-  { key: "facebook", label: "Facebook", Icon: FacebookIcon },
-  { key: "x", label: "X", Icon: XIcon },
-  { key: "instagram", label: "Instagram", Icon: InstagramIcon },
-  { key: "tiktok", label: "TikTok", Icon: TikTokIcon },
-];
+import { FacebookIcon, InstagramIcon, MailIcon, PinIcon, XIcon } from "./icons";
 
 export default function Footer() {
   const f = site.footer;
@@ -18,16 +11,16 @@ export default function Footer() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="logo" src="/assets/logo.png" alt={site.name} />
           <div className="contact">
-            <a href={`mailto:${site.contact.email}`} style={{ display: "flex", gap: 6, alignItems: "center" }}><MailIcon /> {site.contact.email}</a>
-            {f.address && <span style={{ display: "flex", gap: 6, alignItems: "flex-start" }}><span style={{ filter: "invert(1)", marginTop: 2 }}><PinIcon /></span> {f.address}</span>}
+            <span style={{ display: "flex", gap: 4, alignItems: "center" }}><MailIcon /> {site.contact.email}</span>
+            {f.address && <span style={{ display: "flex", gap: 4 }}><span style={{ filter: "invert(1)" }}><PinIcon /></span> {f.address}</span>}
           </div>
           <p className="deliver">{f.deliver}</p>
           <div className="social">
-            {SOCIAL.filter((s) => f.social[s.key]).map((s) => (
-              <a key={s.key} href={f.social[s.key]} aria-label={s.label} target="_blank" rel="noopener noreferrer"><s.Icon /></a>
-            ))}
+            <a href={f.social.facebook} aria-label="Facebook"><FacebookIcon /></a>
+            <a href={f.social.x} aria-label="X"><XIcon /></a>
+            <a href={f.social.instagram} aria-label="Instagram"><InstagramIcon /></a>
           </div>
-          {f.rating && <div className="rating"><StarsRow /> {f.rating.score}</div>}
+          {f.rating && <div className="rating"><i /> {f.rating.score}</div>}
         </div>
         {f.columns.map((c) => (
           <div key={c.title}>

@@ -16,10 +16,10 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
     <div className="sf-herowrap">
       <div className="sf-hero">
         {slides.map((s, k) => (
-          <Link key={k} href={s.href} className={`sf-slide${k === i ? " on" : ""}`} aria-hidden={k !== i} tabIndex={k === i ? 0 : -1}>
+          <Link key={k} href={s.href} className={`sf-slide${k === i ? " on" : ""}`} aria-hidden={k !== i}>
             {s.image ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img className="full" src={s.image} alt={s.title} {...(k === 0 ? { fetchPriority: "high" as const } : { loading: "lazy" as const })} />
+              <img className="full" src={s.image} alt={s.title} />
             ) : (
               <>
                 <div className="sf-slide-bg" />

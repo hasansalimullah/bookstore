@@ -2,6 +2,7 @@ import { query } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
+// Quick self-check: is the database reachable and are the tables there? (No secrets or data are returned.)
 export async function GET() {
   try {
     const r = await query(

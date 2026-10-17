@@ -23,7 +23,7 @@ export const ArrowUpRight = () => (
   <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="#c9ab74" strokeWidth="4.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M6 20L19 8M9 7h11v11" /></svg>
 );
 export const Chevron = ({ dir }: { dir: "l" | "r" }) => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
     {dir === "l" ? <path d="M9 2L4 7l5 5" /> : <path d="M5 2l5 5-5 5" />}
   </svg>
 );
@@ -32,5 +32,3 @@ export const XIcon = () => (<svg width="15" height="15" viewBox="0 0 24 24" fill
 export const InstagramIcon = () => (<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#111" strokeWidth="1.5" aria-hidden><rect x="1" y="1" width="14" height="14" rx="4" /><circle cx="8" cy="8" r="3.2" /><circle cx="12" cy="4" r=".6" fill="#111" /></svg>);
 export const MailIcon = () => (<svg width="11" height="9" viewBox="0 0 12 9" aria-hidden><rect x="0" y="0" width="12" height="9" fill="#222" /><path d="M0.5 1L6 5.200 11.500 1" stroke="#f4f4f4" strokeWidth="1" fill="none" /></svg>);
 export const ShareIcon = () => (<svg width="15" height="15" viewBox="0 0 16 16" fill="#8d8d8d" aria-hidden><circle cx="12.500" cy="3" r="2.200" /><circle cx="3.500" cy="8" r="2.200" /><circle cx="12.500" cy="13" r="2.200" /><path d="M3.500 8l9-5M3.500 8l9 5" stroke="#8d8d8d" strokeWidth="1.300" /></svg>);
-export const TikTokIcon = () => (<svg width="19" height="20" viewBox="0 0 24 26" fill="#111" aria-hidden><path d="M17.5 0c.3 2.600 1.800 4.500 4.600 4.700v3.800c-1.600.1-3-.4-4.500-1.300v7.600c0 4.800-3.200 7.800-7.300 7.800-4 0-7.300-3-7.300-7.200 0-4.600 3.800-7.600 8-7v4c-2.100-.4-3.800.8-3.800 3 0 1.800 1.200 3.100 2.900 3.100 1.800 0 3.100-1.200 3.100-3.700V0h4.300z" /></svg>);
-export const StarsRow = () => (<span className="sf-stars" aria-label="Rating">{[0, 1, 2, 3, 4].map((k) => (<i key={k}>★</i>))}</span>);

@@ -1,11 +1,8 @@
 "use client";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import DeleteAuthorModal from "./DeleteAuthorModal";
 
 export default function AuthorTools({ id, name }: { id: number; name: string }) {
   const router = useRouter();
-  const [showDel, setShowDel] = useState(false);
   const link = { background: "none", border: 0, padding: 0, textDecoration: "underline", fontSize: 12.5, color: "#777" } as const;
   return (
     <div className="ad-pop" style={{ marginTop: 6, display: "flex", gap: 14 }}>
@@ -21,8 +18,16 @@ export default function AuthorTools({ id, name }: { id: number; name: string }) 
       >
         Rename author
       </button>
-      <button style={link} onClick={() => setShowDel(true)}>Delete author</button>
-      {showDel && <DeleteAuthorModal author={{ id, name }} onClose={() => setShowDel(false)} onDeleted={() => router.replace("/admin")} />}
+      <button
+        style={link}
+        onClick={async () => {
+          if (!window.confirm("Delete this author? Their books are kept (they just lose the author link).")) return;
+          const res = await fetch(`/api/admin/authors/${id}`, { method: "DELETE" });
+          if (res.ok) router.replace("/admin");
+        }}
+      >
+        Delete author
+      </button>
     </div>
   );
 }

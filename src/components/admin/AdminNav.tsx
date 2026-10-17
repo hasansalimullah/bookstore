@@ -17,7 +17,6 @@ export default function AdminNav() {
         <Link href="/admin" className={cls("books")}>Books</Link>
         <Link href="/admin/import" className={cls("import")}>Import</Link>
         <Link href="/admin/orders" className={cls("orders")}>Orders</Link>
-        <Link href="/admin/messages" className={path.startsWith("/admin/messages") ? "on" : ""}>Messages</Link>
         <Link href="/admin/test" className={cls("test")}>Test / Simulation</Link>
         <Link href="/" target="_blank">View site ↗</Link>
       </div>

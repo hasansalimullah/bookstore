@@ -11,13 +11,13 @@ export default function Home() {
       <HeroSlider slides={site.hero} />
       <HeroDivider />
       <Carousels only={0} />
-      <div style={{ height: 54 }} />
+      <div style={{ height: 62 }} />
       <Promos />
-      <div style={{ height: 56 }} />
+      <div style={{ height: 14 }} />
       <Carousels only={1} />
       <div style={{ height: 78 }} />
       <LinkButtons />
-      <div style={{ height: 57 }} />
+      <div style={{ height: 56 }} />
       <ClosingBlocks />
     </>
   );

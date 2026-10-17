@@ -44,10 +44,8 @@ export default async function BookPage({ params }: Props) {
     <>
       <ProductDetail book={book} currency={config.currency} />
       <GoldDivider />
-      <Carousels only={0} />
+      <Carousels />
       <div style={{ height: 60 }} />
-      <Carousels only={1} />
-      <div style={{ height: 116 }} />
       <ClosingBlocks />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
     </>
