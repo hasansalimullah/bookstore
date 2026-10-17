@@ -1,5 +1,6 @@
 // Order queries. Orders hold customer PII → only admin routes and the customer's own unguessable order page use these.
 import { randomBytes } from "node:crypto";
+import type { QueryResultRow } from "pg";
 import { config } from "./config.ts";
 import { pool, query } from "./db.ts";
 import type { Customer } from "./shop.ts";
@@ -12,6 +13,24 @@ export interface NewOrderLine {
   title: string;
   unitPriceCents: number;
   qty: number;
+}
+
+interface PublicOrderRow extends QueryResultRow {
+  id: string;
+  public_id: string;
+  status: OrderStatus;
+  currency: string;
+  subtotal_cents: number;
+  shipping_cents: number;
+  total_cents: number;
+  created_at: Date;
+  tracking_info: string | null;
+}
+
+interface PublicOrderItemRow extends QueryResultRow {
+  title: string;
+  unit_price_cents: number;
+  quantity: number;
 }
 
 export async function createOrder(customer: Customer, lines: NewOrderLine[], totals: { subtotalCents: number; shippingCents: number; totalCents: number }) {
@@ -50,9 +69,9 @@ export async function cancelPendingOrder(orderId: number) {
 
 /** Customer-facing view: NO address, email or admin notes. */
 export async function getPublicOrder(publicId: string) {
-  const o = await query(`SELECT id, public_id, status, currency, subtotal_cents, shipping_cents, total_cents, created_at, tracking_info FROM orders WHERE public_id = $1`, [publicId]);
+  const o = await query<PublicOrderRow>(`SELECT id, public_id, status, currency, subtotal_cents, shipping_cents, total_cents, created_at, tracking_info FROM orders WHERE public_id = $1`, [publicId]);
   if (!o.rows[0]) return null;
-  const items = await query(`SELECT title, unit_price_cents, quantity FROM order_items WHERE order_id = $1 ORDER BY id`, [o.rows[0].id]);
+  const items = await query<PublicOrderItemRow>(`SELECT title, unit_price_cents, quantity FROM order_items WHERE order_id = $1 ORDER BY id`, [o.rows[0].id]);
   return { ...o.rows[0], items: items.rows };
 }
 
