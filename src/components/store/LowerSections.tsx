@@ -1,28 +1,19 @@
-import { site } from "@/content/site";
-import BookSection from "./BookSection";
-import { ContactBlock, LinkButtons, Promos, Stats } from "./Blocks";
+import { HomeCarousel, HomePromos } from "./Rotating";
+import { ContactBlock, LinkButtons, Stats } from "./Blocks";
 import Newsletter from "./Newsletter";
 
-/** Everything below the first block on the home page; the product page reuses the carousels + the blocks after them. */
-export function Carousels({ only }: { only?: number }) {
-  return (
-    <>
-      {site.sections.map((s, i) => (only === undefined || only === i ? <BookSection key={i} {...s} /> : null))}
-    </>
-  );
+export function Carousels({ only }: { only: number }) {
+  return <HomeCarousel index={only} tight={only === 1} />;
 }
 
 export function ClosingBlocks() {
   return (
     <>
-      <div style={{ height: 40 }} />
       <ContactBlock />
-      <div style={{ height: 61 }} />
       <Stats />
-      <div style={{ height: 92 }} />
       <Newsletter />
     </>
   );
 }
 
-export { Promos, LinkButtons };
+export { HomePromos as Promos, LinkButtons };

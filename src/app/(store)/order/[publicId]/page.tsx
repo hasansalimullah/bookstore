@@ -31,7 +31,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
       <p className="rounded-lg border border-stone-200 bg-white p-4 font-medium">{LABEL[order.status] ?? order.status}</p>
       {order.tracking_info && <p className="text-sm">Tracking: {order.tracking_info}</p>}
       <ul className="divide-y rounded-lg border border-stone-200 bg-white">
-        {order.items.map((i: { title: string; unit_price_cents: number; quantity: number }, n: number) => (
+        {order.items.map((i, n) => (
           <li key={n} className="flex justify-between p-3 text-sm">
             <span>{i.title} × {i.quantity}</span>
             <span>{formatMoney(i.unit_price_cents * i.quantity, order.currency)}</span>

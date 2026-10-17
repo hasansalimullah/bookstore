@@ -2,26 +2,6 @@ import Link from "next/link";
 import { site } from "@/content/site";
 import { ArrowUpRight } from "./icons";
 
-export function Promos() {
-  return (
-    <div className="sf-promos">
-      {site.promos.map((p, i) => (
-        <div key={i} className="sf-promo sf-pattern">
-          <h3>{p.title}</h3>
-          <p>{p.text}</p>
-          <Link href={p.href} className="btn">{p.button}</Link>
-          {p.image && (
-            <div className="pic">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.image} alt="" />
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function LinkButtons() {
   return (
     <div className="sf-links">
@@ -38,19 +18,23 @@ export function LinkButtons() {
 export function ContactBlock() {
   const c = site.contact;
   return (
-    <div className="sf-contact sf-pattern">
+    <section className="sf-contact sf-pattern">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="logo" src="/assets/logo.png" alt={site.name} />
       <h2>{c.heading[0]}<br />{c.heading[1]}</h2>
       <p>{c.text[0]}<br />{c.text[1]}</p>
-      <a className="btn" href={`mailto:${c.email}`}>{c.button}</a>
-    </div>
+      <Link className="btn" href="/contact">{c.button}</Link>
+    </section>
   );
 }
 
 export function Stats() {
   return (
-    <div>
+    <section className="sf-stats-sec">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="decor l" src="/assets/decor-left.png" alt="" aria-hidden />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="decor r" src="/assets/decor-right.png" alt="" aria-hidden />
       <h2 className="sf-stats-h">{site.statsHeading[0]}<br />{site.statsHeading[1]}</h2>
       <div className="sf-stats">
         {site.stats.map((s, i) => (
@@ -64,6 +48,6 @@ export function Stats() {
           </div>
         ))}
       </div>
-    </div>
+    </section>
   );
 }

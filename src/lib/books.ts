@@ -23,12 +23,13 @@ export interface PublicBook {
   /** main image first, then extra images */
   images: string[];
   priceCents: number | null;
+  createdAt: string | null;
   availability: Availability;
   lastChecked: string | null;
 }
 
 const PUBLIC_COLS = `id, slug, title, title_ar, author, description, category, edition, cover, print_quality, format, harakat,
-  image_url, extra_images, price_cents, availability, last_checked, last_success_at`;
+  image_url, extra_images, price_cents, created_at, availability, last_checked, last_success_at`;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function toPublic(r: any): PublicBook {
@@ -49,6 +50,7 @@ function toPublic(r: any): PublicBook {
     imageUrl: r.image_url,
     images: [r.image_url, ...extra].filter((u: unknown): u is string => typeof u === "string" && u.length > 0),
     priceCents: r.price_cents === null || r.price_cents === undefined ? null : Number(r.price_cents),
+    createdAt: r.created_at ? new Date(r.created_at).toISOString() : null,
     availability: effectiveAvailability(r.availability, r.last_success_at, config.staleAfterMinutes),
     lastChecked: r.last_checked ? new Date(r.last_checked).toISOString() : null,
   };

@@ -6,6 +6,15 @@ import AdminNav from "@/components/admin/AdminNav";
 
 export const dynamic = "force-dynamic";
 
+async function unreadMessages(): Promise<number> {
+  try {
+    const r = await query(`SELECT count(*) AS n FROM contact_messages WHERE NOT is_read`);
+    return Number(r.rows[0]?.n ?? 0);
+  } catch {
+    return 0;
+  }
+}
+
 async function schedulerStalled(): Promise<boolean> {
   try {
     const r = await query(
@@ -24,10 +33,15 @@ async function schedulerStalled(): Promise<boolean> {
 // Server-side guard: unauthenticated visitors never receive any admin HTML.
 export default async function ProtectedAdminLayout({ children }: { children: React.ReactNode }) {
   if (!(await isAdmin())) redirect("/admin/login");
-  const stalled = await schedulerStalled();
+  const [stalled, unread] = await Promise.all([schedulerStalled(), unreadMessages()]);
   return (
     <div className="ad-main" style={{ display: "flex", flexDirection: "column" }}>
       <AdminNav />
+      {unread > 0 && (
+        <div className="ad-banner info" style={{ background: "#fff7e8", borderColor: "#bc9353" }}>
+          📬 You have {unread} new contact message{unread === 1 ? "" : "s"} — <a href="/admin/messages" style={{ textDecoration: "underline" }}>open Messages</a>
+        </div>
+      )}
       {stalled && (
         <div className="ad-banner err">
           🚨 The automatic checker hasn&apos;t run recently, so availability is going out of date. Deploy the cron-worker (see README) or check that it is running.
