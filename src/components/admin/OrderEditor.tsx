@@ -58,6 +58,7 @@ export default function OrderEditor({ order }: { order: any }) {
                 </td>
               </tr>
             ))}
+            {order.discount_cents > 0 && <tr ><td  colSpan={2}>Discount ({order.discount_code})</td><td  colSpan={3}>−{money(order.discount_cents, order.currency)}</td></tr>}
             <tr ><td  colSpan={2}>Shipping</td><td  colSpan={3}>{money(order.shipping_cents, order.currency)}</td></tr>
             <tr ><td  colSpan={2}>Total</td><td  colSpan={3}>{money(order.total_cents, order.currency)}</td></tr>
           </tbody>

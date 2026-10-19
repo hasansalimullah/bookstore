@@ -3,6 +3,8 @@ import { query } from "@/lib/db";
 import { effectiveAvailability, needsLiveCheck } from "@/lib/evaluate";
 import { checkBookNow } from "@/lib/checker";
 import { cancelPendingOrder, createOrder, setStripeSession } from "@/lib/orders";
+import { capDiscount, checkDiscount, normalizeCode } from "@/lib/discounts";
+import { findDiscount } from "@/lib/discount-db";
 import { computeTotals, normalizeCart, validateCustomer } from "@/lib/shop";
 import { createCheckoutSession } from "@/lib/stripe";
 
@@ -18,7 +20,7 @@ export async function POST(req: Request) {
   if (recent.length >= 10) return Response.json({ error: "Too many attempts. Please try again in a few minutes." }, { status: 429 });
   hits.set(ip, [...recent, now]);
 
-  const body = (await req.json().catch(() => ({}))) as { items?: unknown; customer?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { items?: unknown; customer?: unknown; code?: unknown };
   const cart = normalizeCart(body.items);
   if (!cart.length) return Response.json({ error: "Your cart is empty." }, { status: 400 });
   const cust = validateCustomer(body.customer);
@@ -66,8 +68,23 @@ export async function POST(req: Request) {
     });
     if (problems.length) return Response.json({ error: problems.join(" ") }, { status: 409 });
 
-    const totals = computeTotals(lines, config.shippingFlatCents);
-    const { orderId, publicId } = await createOrder(cust.value, lines, totals);
+        // Discount code: checked again here on the server (the cart page only previews it).
+    const subtotal = lines.reduce((n, l) => n + l.unitPriceCents * l.qty, 0);
+    let discountCents = 0;
+    let usedCode: string | null = null;
+    const rawCode = typeof body.code === "string" ? body.code.trim() : "";
+    if (rawCode) {
+      const code = normalizeCode(rawCode);
+      const rule = code ? await findDiscount(code) : null;
+      if (!rule) return Response.json({ error: "That discount code is not valid. Remove it from your cart and try again." }, { status: 409 });
+      const chk = checkDiscount(rule, subtotal);
+      if (!chk.ok) return Response.json({ error: chk.reason }, { status: 409 });
+      discountCents = capDiscount(chk.discountCents, subtotal, config.shippingFlatCents);
+      usedCode = rule.code;
+    }
+
+    const totals = computeTotals(lines, config.shippingFlatCents, discountCents);
+    const { orderId, publicId } = await createOrder(cust.value, lines, totals, usedCode);
 
     if (config.paymentMode === "manual") return Response.json({ url: `/order/${publicId}` });
 
@@ -78,6 +95,8 @@ export async function POST(req: Request) {
       const session = await createCheckoutSession({
         secretKey: config.stripeSecretKey,
         currency: config.currency,
+        discountCents: totals.discountCents,
+        discountName: usedCode ?? undefined,
         lines: stripeLines,
         customerEmail: cust.value.email,
         clientReferenceId: publicId,

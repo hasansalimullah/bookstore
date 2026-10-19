@@ -14,17 +14,22 @@ export interface NewOrderLine {
   qty: number;
 }
 
-export async function createOrder(customer: Customer, lines: NewOrderLine[], totals: { subtotalCents: number; shippingCents: number; totalCents: number }) {
+export async function createOrder(
+  customer: Customer,
+  lines: NewOrderLine[],
+  totals: { subtotalCents: number; shippingCents: number; discountCents?: number; totalCents: number },
+  discountCode: string | null = null,
+) {
   const publicId = randomBytes(12).toString("base64url");
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
     const o = await client.query(
       `INSERT INTO orders (public_id, email, name, phone, ship_line1, ship_line2, ship_city, ship_region, ship_postal_code, ship_country,
-                           currency, subtotal_cents, shipping_cents, total_cents, payment_mode)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING id`,
+                           currency, subtotal_cents, shipping_cents, total_cents, payment_mode, discount_cents, discount_code)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
       [publicId, customer.email, customer.name, customer.phone, customer.line1, customer.line2, customer.city, customer.region, customer.postalCode, customer.country,
-       config.currency, totals.subtotalCents, totals.shippingCents, totals.totalCents, config.paymentMode],
+       config.currency, totals.subtotalCents, totals.shippingCents, totals.totalCents, config.paymentMode, totals.discountCents ?? 0, discountCode],
     );
     const orderId = Number(o.rows[0].id);
     for (const l of lines) {
@@ -54,6 +59,8 @@ export interface PublicOrder {
   currency: string;
   subtotal_cents: number;
   shipping_cents: number;
+  discount_cents: number;
+  discount_code: string | null;
   total_cents: number;
   created_at: string;
   tracking_info: string | null;
@@ -62,7 +69,11 @@ export interface PublicOrder {
 
 /** Customer-facing view: NO address, email or admin notes. */
 export async function getPublicOrder(publicId: string): Promise<PublicOrder | null> {
-  const o = await query(`SELECT id, public_id, status, currency, subtotal_cents, shipping_cents, total_cents, created_at, tracking_info FROM orders WHERE public_id = $1`, [publicId]);
+  const o = await query(
+    `SELECT id, public_id, status, currency, subtotal_cents, shipping_cents, discount_cents, discount_code, total_cents, created_at, tracking_info
+       FROM orders WHERE public_id = $1`,
+    [publicId],
+  );
   const row = o.rows[0];
   if (!row) return null;
   const items = await query(`SELECT title, unit_price_cents, quantity FROM order_items WHERE order_id = $1 ORDER BY id`, [row.id]);
@@ -72,6 +83,8 @@ export async function getPublicOrder(publicId: string): Promise<PublicOrder | nu
     currency: row.currency,
     subtotal_cents: Number(row.subtotal_cents),
     shipping_cents: Number(row.shipping_cents),
+    discount_cents: Number(row.discount_cents ?? 0),
+    discount_code: row.discount_code,
     total_cents: Number(row.total_cents),
     created_at: new Date(row.created_at).toISOString(),
     tracking_info: row.tracking_info,
@@ -86,7 +99,12 @@ export async function markPaidBySession(opts: { publicId: string; sessionId: str
       WHERE public_id = $1 AND status = 'pending_payment' AND total_cents = $3 AND currency = $4`,
     [opts.publicId, opts.sessionId, opts.amountTotal, opts.currency.toLowerCase(), opts.paymentIntent],
   );
-  return (r.rowCount ?? 0) > 0;
+    const ok = (r.rowCount ?? 0) > 0;
+  if (ok) {
+    // A code counts as "used" only once the order is really paid.
+    await query(`UPDATE discount_codes SET uses = uses + 1 WHERE code = (SELECT discount_code FROM orders WHERE public_id = $1)`, [opts.publicId]).catch(() => {});
+  }
+  return ok;
 }
 
 export async function cancelBySession(publicId: string) {

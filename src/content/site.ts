@@ -33,6 +33,8 @@ export interface HeroSlide {
 }
 
 export const site = {
+    /** Privacy-friendly visit statistics (Cloudflare Web Analytics). Paste your site token to switch it on; empty = no analytics at all. */
+  analytics: { cloudflareToken: "" },
   name: process.env.NEXT_PUBLIC_SITE_NAME ?? "Ahlul Ilm Books",
   country: "United States",
     announcements: ["WORLDWIDE SHIPPING WITH USPS", "FAST PROCESSING GUARANTEED"],

@@ -6,7 +6,7 @@ import { useCart } from "./CartProvider";
 const EMPTY = { name: "", email: "", phone: "", line1: "", line2: "", city: "", region: "", postalCode: "", country: "" };
 
 export default function CheckoutForm() {
-  const { items, ready, clear } = useCart();
+  const { items, ready, clear, code } = useCart();
   const [f, setF] = useState(EMPTY);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +19,7 @@ export default function CheckoutForm() {
     setError(null);
     setFields({});
     try {
-      const res = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items, customer: f }) });
+      const res = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items, customer: f, code }) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(data.error ?? "Something went wrong.");
@@ -69,6 +69,7 @@ export default function CheckoutForm() {
         {field("region", "State / region")}
         {field("postalCode", "Postal code")}
       </div>
+      {code && <p className="text-sm text-emerald-800">Discount code <b>{code}</b> will be applied on the next step.</p>}
       {error && <p className="rounded bg-red-50 p-3 text-sm text-red-800">{error}</p>}
       <div className="flex items-center gap-4">
         <button onClick={submit} disabled={busy} className="rounded-lg bg-emerald-700 px-6 py-2.5 font-medium text-white hover:bg-emerald-800 disabled:opacity-50">

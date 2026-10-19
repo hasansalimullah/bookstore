@@ -35,10 +35,19 @@ export function normalizeCart(raw: unknown): CartItem[] {
   return [...map.entries()].slice(0, MAX_LINES).map(([bookId, qty]) => ({ bookId, qty }));
 }
 
-export function computeTotals(lines: { unitPriceCents: number; qty: number }[], shippingFlatCents: number) {
+export function computeTotals(
+  lines: { unitPriceCents: number; qty: number }[],
+  shippingFlatCents: number,
+  discountCents = 0,
+): { subtotalCents: number; shippingCents: number; totalCents: number; discountCents?: number } {
   const subtotal = lines.reduce((n, l) => n + l.unitPriceCents * l.qty, 0);
   const shipping = lines.length ? shippingFlatCents : 0;
-  return { subtotalCents: subtotal, shippingCents: shipping, totalCents: subtotal + shipping };
+  const discount = Math.max(0, Math.min(discountCents, subtotal)); // a discount never exceeds the books' subtotal
+  const totals = { subtotalCents: subtotal, shippingCents: shipping, totalCents: subtotal - discount + shipping };
+  if (discount > 0) {
+    return { ...totals, discountCents: discount };
+  }
+  return totals;
 }
 
 export interface Customer {

@@ -20,21 +20,40 @@ export interface CheckoutLine {
   quantity: number;
 }
 
+/** One-time fixed-amount coupon, created per checkout. */
+export async function createCoupon(secretKey: string, amountOffCents: number, currency: string, name: string): Promise<string> {
+  const body = encodeForm({ amount_off: amountOffCents, currency, duration: "once", max_redemptions: 1, name: name.slice(0, 40) });
+  const res = await fetch("https://api.stripe.com/v1/coupons", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+    signal: AbortSignal.timeout(15_000),
+  });
+  const data = (await res.json().catch(() => ({}))) as { id?: string; error?: { message?: string } };
+  if (!res.ok || !data.id) throw new Error(`Stripe coupon error: ${data.error?.message ?? res.status}`);
+  return data.id;
+}
+
 export async function createCheckoutSession(opts: {
   secretKey: string;
   currency: string;
+  discountCents?: number;
+  discountName?: string;
   lines: CheckoutLine[];
   customerEmail: string;
   clientReferenceId: string;
   successUrl: string;
   cancelUrl: string;
 }): Promise<{ id: string; url: string }> {
+  const couponId = opts.discountCents && opts.discountCents > 0 ? await createCoupon(opts.secretKey, opts.discountCents, opts.currency, opts.discountName ?? "Discount") : null;
   const body = encodeForm({
+    discounts: couponId ? [{ coupon: couponId }] : undefined,
     mode: "payment",
     success_url: opts.successUrl,
     cancel_url: opts.cancelUrl,
     customer_email: opts.customerEmail,
     client_reference_id: opts.clientReferenceId,
+    ...(couponId ? { discounts: [{ coupon: couponId }] } : {}),
     line_items: opts.lines.map((l) => ({
       quantity: l.quantity,
       price_data: { currency: opts.currency, unit_amount: l.unitAmountCents, product_data: { name: l.name.slice(0, 250) } },

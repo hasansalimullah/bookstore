@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CookieSettingsLink from "./CookieSettingsLink";
 import { site } from "@/content/site";
 import { InstagramIcon, FacebookIcon, XIcon, TikTokIcon, MailIcon, PinIcon, StarsRow } from "./icons";
 
@@ -40,7 +41,7 @@ export default function Footer() {
           {f.aboutText}
         </div>
       </div>
-      <div className="sf-copy">{f.copyright}</div>
+    <div className="sf-copy">{f.copyright} · <CookieSettingsLink /></div>
     </footer>
   );
 }

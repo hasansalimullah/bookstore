@@ -37,6 +37,9 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
             <span>{formatMoney(i.unit_price_cents * i.quantity, order.currency)}</span>
           </li>
         ))}
+        {order.discount_cents > 0 && (
+         <li className="flex justify-between p-3 text-sm text-emerald-800"><span>Discount ({order.discount_code})</span><span>−{formatMoney(order.discount_cents, order.currency)}</span></li>
+        )}
         <li className="flex justify-between p-3 text-sm"><span>Shipping</span><span>{formatMoney(order.shipping_cents, order.currency)}</span></li>
         <li className="flex justify-between p-3 font-bold"><span>Total</span><span>{formatMoney(order.total_cents, order.currency)}</span></li>
       </ul>

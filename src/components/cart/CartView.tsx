@@ -6,22 +6,23 @@ import { formatMoney } from "@/lib/shop";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default function CartView() {
-  const { items, ready, setQty, remove } = useCart();
+  const { items, ready, setQty, remove, code, setCode } = useCart();
+  const [draft, setDraft] = useState("");
   const [quote, setQuote] = useState<any>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     if (!ready) return;
-    if (!items.length) return setQuote({ lines: [], totals: { subtotalCents: 0, shippingCents: 0, totalCents: 0 }, currency: "usd" });
+    if (!items.length) return setQuote({ lines: [], totals: { subtotalCents: 0, shippingCents: 0, discountCents: 0, totalCents: 0 }, currency: "usd" });
     let cancelled = false;
-    fetch("/api/cart/quote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items }) })
+    fetch("/api/cart/quote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items, code }) })
       .then((r) => r.json())
       .then((d) => !cancelled && (d.error ? setError(true) : setQuote(d)))
       .catch(() => !cancelled && setError(true));
     return () => {
       cancelled = true;
     };
-  }, [items, ready]);
+  }, [items, ready, code]);
 
   if (!ready || (!quote && !error)) return <p className="text-stone-500">Loading cart…</p>;
   if (error) return <p className="text-amber-800">Could not load your cart. Please refresh.</p>;
@@ -67,7 +68,31 @@ export default function CartView() {
       <aside className="h-fit space-y-3 rounded-xl border border-stone-200 bg-white p-4">
         <h2 className="text-lg font-bold">Order summary</h2>
         <div className="flex justify-between text-sm"><span>Subtotal</span><span>{formatMoney(quote.totals.subtotalCents, cur)}</span></div>
+        {quote.totals.discountCents > 0 && (
+          <div className="flex justify-between text-sm text-emerald-800"><span>Discount ({quote.discount?.code})</span><span>−{formatMoney(quote.totals.discountCents, cur)}</span></div>
+        )}
         <div className="flex justify-between text-sm"><span>Shipping (worldwide flat rate)</span><span>{formatMoney(quote.totals.shippingCents, cur)}</span></div>
+        <div className="space-y-1 border-t pt-3">
+          {code ? (
+            <p className="flex items-center justify-between text-sm">
+              <span>Code <b>{code}</b></span>
+              <button onClick={() => setCode("")} className="text-red-700 underline">Remove</button>
+            </p>
+          ) : (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (draft.trim()) setCode(draft);
+                setDraft("");
+              }}
+              className="flex gap-2"
+            >
+              <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Discount code" className="min-w-0 flex-1 rounded border border-stone-300 px-2 py-1.5 text-sm uppercase" />
+              <button className="rounded bg-stone-800 px-3 py-1.5 text-sm text-white">Apply</button>
+            </form>
+          )}
+          {quote.discountError && <p className="text-xs text-red-700">{quote.discountError}</p>}
+        </div>
         <div className="flex justify-between border-t pt-2 font-bold"><span>Total</span><span>{formatMoney(quote.totals.totalCents, cur)}</span></div>
         {blocked ? (
           <button disabled className="w-full cursor-not-allowed rounded-lg bg-stone-200 py-2.5 text-stone-500">Remove unavailable items</button>
