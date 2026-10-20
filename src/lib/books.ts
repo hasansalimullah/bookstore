@@ -85,6 +85,18 @@ export async function listBooks(f: BookFilter = {}): Promise<PublicBook[]> {
   return rows.map(toPublic);
 }
 
+/** Books by id, in the order given (wishlist, best sellers). */
+export async function listBooksByIds(ids: number[]): Promise<PublicBook[]> {
+  const clean = [...new Set(ids.filter((n) => Number.isInteger(n) && n > 0))].slice(0, 100);
+  if (!clean.length) return [];
+  const { rows } = await query(`SELECT ${PUBLIC_COLS} FROM books WHERE published AND id = ANY($1::bigint[])`, [clean]);
+  const byId = new Map<number, PublicBook>(rows.map((r: any) => [Number(r.id), toPublic(r)]));
+  return clean.flatMap((id) => {
+    const b = byId.get(id);
+    return b ? [b] : [];
+  });
+}
+
 /** Kept for the public JSON API. */
 export async function listPublicBooks(search?: string): Promise<PublicBook[]> {
   return listBooks({ q: search });

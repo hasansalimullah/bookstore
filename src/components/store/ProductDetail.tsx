@@ -39,6 +39,7 @@ export default function ProductDetail({ book, currency }: { book: PublicBook; cu
       const next = cur.includes(book.id) ? cur.filter((x) => x !== book.id) : [...cur, book.id];
       localStorage.setItem(WISH, JSON.stringify(next));
       setWished(next.includes(book.id));
+      window.dispatchEvent(new Event("wishlist:changed"));
     } catch {
       /* ignore */
     }

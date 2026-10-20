@@ -86,7 +86,7 @@ export async function POST(req: Request) {
     const totals = computeTotals(lines, config.shippingFlatCents, discountCents);
     const { orderId, publicId } = await createOrder(cust.value, lines, totals, usedCode);
 
-    if (config.paymentMode === "manual") return Response.json({ url: `/order/${publicId}` });
+    if (config.paymentMode === "manual") return Response.json({ url: `/order/${publicId}`, publicId });
 
     const origin = config.siteUrl || new URL(req.url).origin;
     try {
@@ -104,7 +104,7 @@ export async function POST(req: Request) {
         cancelUrl: `${origin}/cart`,
       });
       await setStripeSession(orderId, session.id);
-      return Response.json({ url: session.url });
+      return Response.json({ url: session.url, publicId });
     } catch (e) {
       console.error("[checkout] stripe failed:", e instanceof Error ? e.message : e);
       await cancelPendingOrder(orderId);

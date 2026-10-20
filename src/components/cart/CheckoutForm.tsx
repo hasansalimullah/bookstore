@@ -28,6 +28,16 @@ export default function CheckoutForm() {
         return;
       }
       clear();
+      try {
+        // Remember the order on this device so "Your account" can list it
+        if (data.publicId) {
+          const old = JSON.parse(localStorage.getItem("orders-v1") ?? "[]");
+          const list = Array.isArray(old) ? old : [];
+          localStorage.setItem("orders-v1", JSON.stringify([{ id: data.publicId, at: Date.now() }, ...list.filter((o: { id: string }) => o.id !== data.publicId)].slice(0, 30)));
+        }
+      } catch {
+        /* ignore */
+      }
       window.location.href = data.url; // Stripe Checkout (or our order page in manual mode)
     } catch {
       setError("Network error. Please try again.");

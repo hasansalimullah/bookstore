@@ -5,7 +5,8 @@ import Topbar from "./Topbar";
 import CartIconLink from "./CartIconLink";
 import MegaNav from "./MegaNav";
 import SearchBox from "./SearchBox";
-import { HeartIcon, UserIcon } from "./icons";
+import { UserIcon } from "./icons";
+import WishlistLink from "./WishListLink";
 
 export default function Header() {
   return (
@@ -19,8 +20,8 @@ export default function Header() {
           </Link>
           <SearchBox currency={config.currency} />
           <div className="sf-icons">
-            <Link href="/p/login" aria-label="Account"><UserIcon /></Link>
-            <Link href="/p/wishlist" aria-label="Wishlist"><HeartIcon /></Link>
+            <Link href="/account" aria-label="Account"><UserIcon /></Link>
+            <WishlistLink />
             <CartIconLink />
           </div>
         </div>

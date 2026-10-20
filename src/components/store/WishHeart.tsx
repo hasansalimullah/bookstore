@@ -21,6 +21,7 @@ export default function WishHeart({ id }: { id: number }) {
       const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
       localStorage.setItem(KEY, JSON.stringify(next));
       setOn(next.includes(id));
+      window.dispatchEvent(new Event("wishlist:changed"));
     } catch {
       /* ignore */
     }

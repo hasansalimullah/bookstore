@@ -35,6 +35,8 @@ export interface HeroSlide {
 export const site = {
     /** Privacy-friendly visit statistics (Cloudflare Web Analytics). Paste your site token to switch it on; empty = no analytics at all. */
   analytics: { cloudflareToken: "" },
+  /** Pop-up that offers a discount for joining the newsletter. Create the same code in Admin → Discounts (for example WELCOME10 = 10% off). */
+  newsletterPopup: { enabled: true, delaySeconds: 12, percent: 10, code: "WELCOME10" },
   name: process.env.NEXT_PUBLIC_SITE_NAME ?? "Ahlul Ilm Books",
   country: "United States",
     announcements: ["WORLDWIDE SHIPPING WITH USPS", "FAST PROCESSING GUARANTEED"],
@@ -238,11 +240,10 @@ export const site = {
       {
         title: "MY ACCOUNT",
         links: [
-          { label: "Login", href: "/p/login" },
-          { label: "Registration", href: "/p/registration" },
-          { label: "My account", href: "/p/my-account" },
-          { label: "Wishlist", href: "/p/wishlist" },
-          { label: "Purchase history", href: "/p/purchase-history" },
+          { label: "My account", href: "/account" },
+          { label: "Wishlist", href: "/wishlist" },
+          { label: "Purchase history", href: "/account#orders" },
+          { label: "Track an order", href: "/account#track" },
         ],
       },
     ],
