@@ -46,3 +46,21 @@ export async function deleteAuthor(id: number): Promise<boolean> {
   const r = await query(`DELETE FROM authors WHERE id = $1`, [id]);
   return (r.rowCount ?? 0) > 0;
 }
+
+
+export interface AuthorMeta {
+  era: string | null;
+  tags: string[];
+  featured: boolean;
+}
+
+export async function getAuthorMeta(id: number): Promise<AuthorMeta | null> {
+  const { rows } = await query(`SELECT era, tags, featured FROM authors WHERE id = $1`, [id]);
+  const r = rows[0];
+  return r ? { era: (r.era as string | null) ?? null, tags: (r.tags as string[] | null) ?? [], featured: !!r.featured } : null;
+}
+
+export async function updateAuthorMeta(id: number, m: AuthorMeta): Promise<boolean> {
+  const r = await query(`UPDATE authors SET era = $2, tags = $3::text[], featured = $4 WHERE id = $1`, [id, m.era, m.tags, m.featured]);
+  return (r.rowCount ?? 0) > 0;
+}

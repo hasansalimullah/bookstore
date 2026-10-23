@@ -10,9 +10,14 @@ export interface NavLink {
   href: string;
 }
 export interface NavMenu {
-  columns: { title: string; links: NavLink[] }[];
-  /** Category keyword for the 4 featured books in the dropdown. "" = newest books. */
+  /** Hand-written link columns (optional). */
+  columns?: { title: string; links: NavLink[] }[];
+  /** Category word(s) for the 4 featured books in the dropdown ("" = newest books). Leave out for no books. */
   featured?: string;
+  /** Build the link sections from your book categories, e.g. "Arabic" or "Aqeeda|Aqidah". */
+  auto?: string;
+  /** Show the Authors menu (top authors, by century, by school). */
+  authors?: boolean;
 }
 export interface NavItem {
   label: string;
@@ -44,85 +49,41 @@ export const site = {
   currencyLabel: "$ USD",
 
     /** Top menu. Items with `menu` open a dropdown. Edit labels and links freely. */
-  nav: [
-    {
-      label: "NEW RELEASES",
-      href: "/shop?sort=new",
-      active: true,
-      menu: {
-        columns: [{ title: "Browse", links: [{ label: "New releases", href: "/shop?sort=new" }, { label: "All books", href: "/shop" }] }],
-        featured: "",
-      },
-    },
-    {
-      label: "AUTHORS",
-      href: "/shop",
-      menu: {
-        columns: [
-          {
-            title: "Top authors",
-            links: [
-              { label: "Ibn Taymiyyah", href: "/shop?q=Taymiyyah" },
-              { label: "Ibn al-Qayyim", href: "/shop?q=Qayyim" },
-              { label: "Ibn al-Jawzi", href: "/shop?q=Jawzi" },
-              { label: "Al-Uthaymin", href: "/shop?q=Uthaymin" },
-              { label: "Ibn Baz", href: "/shop?q=Baz" },
-            ],
-          },
-        ],
-        featured: "",
-      },
-    },
-    {
-      label: "ARABIC",
-      href: "/shop?category=Arabic",
-      menu: {
-        columns: [
-          { title: "Learn Arabic", links: [{ label: "Grammar (Nahw)", href: "/shop?q=Nahw" }, { label: "Morphology (Sarf)", href: "/shop?q=Sarf" }, { label: "Dictionaries", href: "/shop?q=Dictionary" }] },
-          { title: "Literature", links: [{ label: "Poetry (Diwan)", href: "/shop?q=Diwan" }, { label: "Rhetoric (Balaghah)", href: "/shop?q=Balaghah" }] },
-        ],
-        featured: "Arabic",
-      },
-    },
-    {
-      label: "QURAN & TAFSIR",
-      href: "/shop?category=Quran|Tafsir",
-      menu: {
-        columns: [
-          { title: "Tafsir", links: [{ label: "Complete tafsir", href: "/shop?q=Tafsir" }, { label: "Quranic sciences", href: "/shop?q=Quranic" }] },
-          { title: "Quran", links: [{ label: "Mushaf", href: "/shop?q=Mushaf" }, { label: "Tajwid & recitation", href: "/shop?q=Tajwid" }] },
-        ],
-        featured: "Tafsir",
-      },
-    },
-    {
-      label: "AQEEDA",
-      href: "/shop?category=Aqeeda",
-      menu: {
-        columns: [{ title: "Aqidah", links: [{ label: "Tawhid", href: "/shop?q=Tawhid" }, { label: "Names & attributes", href: "/shop?q=Sifat" }, { label: "Explanations of texts", href: "/shop?q=Sharh" }] }],
-        featured: "Aqeeda",
-      },
-    },
-    {
-      label: "FIQH",
-      href: "/shop?category=Fiqh",
-      menu: {
-        columns: [
-          { title: "Schools", links: [{ label: "Hanafi", href: "/shop?q=Hanafi" }, { label: "Maliki", href: "/shop?q=Maliki" }, { label: "Shafi'i", href: "/shop?q=Shafi" }, { label: "Hanbali", href: "/shop?q=Hanbali" }] },
-          { title: "Topics", links: [{ label: "Usul al-Fiqh", href: "/shop?q=Usul" }, { label: "Fatawa", href: "/shop?q=Fatawa" }] },
-        ],
-        featured: "Fiqh",
-      },
-    },
-    {
-      label: "HADEETH",
-      href: "/shop?category=Hadeeth|Hadith",
-      menu: {
-        columns: [{ title: "Hadith", links: [{ label: "Collections", href: "/shop?q=Sahih" }, { label: "Explanations (Sharh)", href: "/shop?q=Sharh" }, { label: "Hadith sciences", href: "/shop?q=Mustalah" }] }],
-        featured: "Hadeeth|Hadith",
-      },
-    },
+    nav: [
+    { label: "NEW RELEASES", href: "/shop?sort=new", active: true, menu: { columns: [{ title: "Browse", links: [{ label: "New releases", href: "/shop?sort=new" }, { label: "All books", href: "/shop" }] }], featured: "" } },
+    { label: "AUTHORS", href: "/shop", menu: { authors: true } },
+    { label: "ARABIC", href: "/shop?category=Arabic", menu: { auto: "Arabic", featured: "Arabic" } },
+    { label: "QURAN & TAFSIR", href: "/shop?category=Quran|Tafsir", menu: { auto: "Quran|Tafsir|Tafseer", featured: "Tafsir|Quran" } },
+    { label: "AQEEDA", href: "/shop?category=Aqeeda|Aqidah", menu: { auto: "Aqeeda|Aqidah", featured: "Aqeeda|Aqidah" } },
+    { label: "FIQH", href: "/shop?category=Fiqh", menu: { auto: "Fiqh", featured: "Fiqh" } },
+    { label: "HADEETH", href: "/shop?category=Hadeeth|Hadith", menu: { auto: "Hadeeth|Hadith", featured: "Hadeeth|Hadith" } },
+    // To add a menu: copy a line above, change the label and the category word(s) in href / auto / featured.
   ] as NavItem[],
+
+  /** Centuries/areas offered when you edit an author (Admin → author page). Order here = order in the menu. */
+  authorEras: [
+    "The 1st and 2nd centuries",
+    "The 3rd century",
+    "4th century",
+    "5th century",
+    "6th century",
+    "7th century",
+    "8th century",
+    "9th & 10th centuries",
+    "From 11th to 13th centuries",
+    "14th century",
+    "15th century",
+    "Contemporaries",
+  ],
+  /** Groups for the "in thematic order" part of the Authors menu. */
+  authorTags: [
+    { key: "hadith", label: "Scholars of Hadith" },
+    { key: "tafsir", label: "Imams of Tafsir" },
+    { key: "hanafi", label: "Hanafi scholars" },
+    { key: "shafii", label: "Shafii scholars" },
+    { key: "maliki", label: "Maliki scholars" },
+    { key: "hanbali", label: "Hanbali scholars" },
+  ],
 
     /** Home banners (the text is already inside the images). Add or remove slides freely. */
   hero: [
